@@ -17,7 +17,7 @@ var obj_data:Dictionary = {"SPEED": 8.0}
 func _ready() -> void:
 	await(get_tree().process_frame)
 	global_position = NavigationServer3D.map_get_closest_point(map_RID, global_position)
-	unit_graphic.position.y = NavigationServer3D.map_get_cell_height(map_RID) * 2
+	unit_graphic.position.y = - NavigationServer3D.map_get_cell_height(map_RID) * 2
 	unselected()
 
 func selected() -> void:

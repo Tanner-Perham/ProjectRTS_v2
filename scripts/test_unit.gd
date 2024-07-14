@@ -15,6 +15,9 @@ var path_points_packed:PackedVector3Array
 var obj_data:Dictionary = {"SPEED": 8.0}
 
 func _ready() -> void:
+	await(get_tree().process_frame)
+	global_position = NavigationServer3D.map_get_closest_point(map_RID, global_position)
+	unit_graphic.position.y = NavigationServer3D.map_get_cell_height(map_RID) * 2
 	unselected()
 
 func selected() -> void:
@@ -34,6 +37,7 @@ func _physics_process(delta: float) -> void:
 		var path_next_point:Vector3 = path_points_packed[pathing_point] - global_position
 		if path_next_point.length_squared() > 1.0:
 			var velocity:Vector3 = (path_next_point.normalized() * delta) * obj_data["SPEED"]
+			unit_rotate_to_direction(velocity)
 			global_position += velocity
 		else:
 			if pathing_point < (path_points_packed.size() - 1):
@@ -41,3 +45,6 @@ func _physics_process(delta: float) -> void:
 				_physics_process(delta)
 			else:
 				pathing = false 
+
+func unit_rotate_to_direction(direction:Vector3) -> void:
+	rotation.y = atan2(-direction.x, -direction.z)

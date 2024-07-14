@@ -3,7 +3,6 @@ extends Node3D
 # NODES
 @onready var selected_graphic:Sprite3D = $selected
 @onready var unit_graphic:Node3D = $Test_Unit_01
-@onready var character_body:CharacterBody3D = $CharacterBody3D
 @onready var map_RID:RID = get_world_3d().get_navigation_map()
 
 @export var player_owner: String

@@ -1,0 +1,36 @@
+[gd_scene load_steps=6 format=3 uid="uid://cfad5wy2om38f"]
+
+[ext_resource type="Texture2D" uid="uid://o4e4wrbs2rrl" path="res://image/selectionbox.png" id="1_cm1re"]
+[ext_resource type="Script" path="res://scripts/test_unit.gd" id="1_h12qa"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_v7qkx"]
+
+[sub_resource type="PrismMesh" id="PrismMesh_64iok"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jx1po"]
+
+[node name="testunit" type="Node3D"]
+script = ExtResource("1_h12qa")
+
+[node name="Test_Unit_01" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Test_Unit_01"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_v7qkx")
+skeleton = NodePath("../..")
+
+[node name="Direction_Arrow" type="MeshInstance3D" parent="Test_Unit_01"]
+transform = Transform3D(1, 0, 0, 0, -2.18557e-08, 0.2, 0, -0.5, -8.74228e-09, 0, 0.2, -1)
+mesh = SubResource("PrismMesh_64iok")
+
+[node name="CharacterBody3D" type="CharacterBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_jx1po")
+
+[node name="selected" type="Sprite3D" parent="."]
+modulate = Color(0.219608, 0.501961, 0.305882, 0.305882)
+pixel_size = 0.2
+axis = 1
+texture = ExtResource("1_cm1re")

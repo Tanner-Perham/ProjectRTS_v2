@@ -93,5 +93,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.85424, 0, 0)
 
 [node name="testunit2" parent="." instance=ExtResource("4_k6mqi")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.93594, 0, 0)
+player_owner = "Hello World"
 
 [node name="testunit" parent="." instance=ExtResource("4_k6mqi")]
+player_owner = "Hello World"

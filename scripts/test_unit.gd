@@ -1,6 +1,7 @@
 extends Node3D
 
 @onready var selected_graphic:Sprite3D = $selected
+@export var player_owner: String
 
 func _ready() -> void:
 	unselected()

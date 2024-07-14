@@ -8,27 +8,32 @@ const MIN_DRAG_SQUARED: int = 250
 
 var mouse_left_click: bool = false
 var drag_rectangle_area: Rect2
-var visible_units: Dictionary = {}
+var available_units: Dictionary = {}
 var selected_units: Dictionary = {}
+var player_id: String = "Hello World"
 
 func _ready() -> void:
 	initialise_interface()
+	
 
-func unit_entered(unit: Node3D) -> void:	
+func unit_entered(unit: Node3D) -> void:
+	"""
+	Handler function for registering a unit to the available units dictionary.
+	"""
 	var unit_id: int = unit.get_instance_id()
-	if visible_units.has(unit_id):
+	if available_units.has(unit_id):
 		return
-	visible_units[unit_id] = unit.get_parent()
+	available_units[unit_id] = unit.get_parent()
 	print("unit_entered:", unit, "id:", unit_id, "unit_node:", unit.get_parent())
 
 func unit_exited(unit: Node3D) -> void:
 	var unit_id: int = unit.get_instance_id()
-	if visible_units.has(unit_id):
-		visible_units.erase(unit_id)
+	if available_units.has(unit_id):
+		available_units.erase(unit_id)
 	print("unit_exited:", unit, "id:", unit_id, "unit_node:", unit.get_parent())
 
 func debug_units_selected() -> void:
-	print(visible_units)
+	print(available_units)
 
 func initialise_interface() -> void:
 	ui_dragbox.visible = false
@@ -46,11 +51,15 @@ func _input(event: InputEvent) -> void:
 			cast_selection()
 
 func cast_selection() -> void:
-	for unit in visible_units.values():
+	for unit in available_units.values():
+		# Check if the unit belongs to the player
+		if unit.player_owner != player_id:
+			continue
 		if drag_rectangle_area.abs().has_point(player_camera.get_Vector2_from_Vector3(unit.transform.origin)):
 			selected_units[unit.get_instance_id()] = unit
 			unit.selected()
 		else:
+			# Remove units no longer selected
 			unit.unselected()
 			selected_units.erase(unit.get_instance_id())
 	print(selected_units)

@@ -1,5 +1,9 @@
 extends Node2D
 
+# MODULES
+const MODULE_LIST = preload("res://scripts/module_list.gd")
+const FORMATION = MODULE_LIST.SCRIPTS[MODULE_LIST.MODULES.FORMATION]
+
 @onready var player_camera: Node3D = $camera_base
 @onready var player_camera_visibleunits_Area3D: Area3D = $camera_base/visibleunits_area3D
 @onready var ui_dragbox: NinePatchRect = $ui_dragbox

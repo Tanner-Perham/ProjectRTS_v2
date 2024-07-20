@@ -16,6 +16,15 @@ var available_units: Dictionary = {}
 var selected_units: Dictionary = {}
 var player_id: String = "Hello World"
 
+
+# FORMATION
+var _formation_divisor: int = 3:
+	set(new_value): _formation_divisor = clampi(new_value, 1, 10)
+var _formation_spread: float = 1.0:
+	set(new_value): _formation_spread = clampf(new_value, 0.5, 3.0)
+var _formation_rotation: float = 90.0
+
+
 func _ready() -> void:
 	initialise_interface()
 	
@@ -96,4 +105,22 @@ func update_ui_dragbox() -> void:
 	else:
 		ui_dragbox.scale.y = 1
 
+# Move selection to given destination as a formation
+func selection_move_as_formation(where_to: Vector2) -> void:
+	var selection_size: int = selected_units.size()
+	if selection_size > 1:
+		var formation_positions: PackedVector2Array = FORMATION.return_formation_positions(
+			where_to,
+			selected_units.values(),
+			[_formation_divisor, _formation_spread, _formation_rotation]
+			)
+		var i: int = 0
+		for unit in selected_units.values():
+			var pos: Vector3 = Vector3(
+				formation_positions[i].x,
+				unit.position.y,
+				formation_positions[i].y
+			)
+			unit.unit_path_new(pos)
 
+			i += 1

@@ -54,13 +54,14 @@ func initialise_interface() -> void:
 	player_camera_visibleunits_Area3D.body_exited.connect(unit_exited)
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
-		var mouse_pos:Vector2 = get_global_mouse_position()
-		var camera_raycast_coordinates:Vector3 = player_camera.get_vector3_from_camera_raycast(mouse_pos)
-		print(camera_raycast_coordinates)
-		if camera_raycast_coordinates != Vector3.ZERO:
-			for unit in selected_units.values():
-				unit.unit_path_new(camera_raycast_coordinates)
+	if event.is_action_released("mouse_rightclick"):
+		if !selected_units.is_empty():
+			var mouse_pos:Vector2 = get_global_mouse_position()
+			var camera_raycast_coordinates:Vector3 = player_camera.get_vector3_from_camera_raycast(mouse_pos)
+			print(camera_raycast_coordinates)
+			if camera_raycast_coordinates != Vector3.ZERO:
+				for unit in selected_units.values():
+					unit.unit_path_new(camera_raycast_coordinates)
 
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:

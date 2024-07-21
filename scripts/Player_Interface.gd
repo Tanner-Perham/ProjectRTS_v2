@@ -80,9 +80,8 @@ func _input(event: InputEvent) -> void:
 				if mouse_pressed_pos == Vector2.ZERO: mouse_pressed_pos = mouse_position
 				if selected_units.size() > 1:
 					if mouse_right_click_position == Vector2.ZERO:
-						mouse_right_click_position = mouse_position
-					# TODO: Update behaviour so that any right click and hold will go to formation edit mode
-					elif (mouse_right_click_position).distance_squared_to(mouse_position) > 50:
+						mouse_right_click_position = mouse_pressed_pos
+					if (mouse_right_click_position).distance_squared_to(mouse_position) > 500:
 						input_state = INPUT_STATES.GROUP_FORMATION_SET
 						player_camera.camera_can_process = false
 

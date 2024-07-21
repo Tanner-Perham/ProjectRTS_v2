@@ -185,10 +185,10 @@ func cast_selection() -> void:
 			continue
 		if drag_rectangle_area.abs().has_point(player_camera.get_Vector2_from_Vector3(unit.transform.origin)):
 			selected_units[unit.get_instance_id()] = unit
-			unit.selected()
+			unit.selected = true
 		else:
 			# Remove units no longer selected
-			unit.unselected()
+			unit.selected = false
 			selected_units.erase(unit.get_instance_id())
 	print(selected_units)
 

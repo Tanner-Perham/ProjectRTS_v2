@@ -24,6 +24,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
   release:
+    permissions: write-all
     name: Release pushed tag
     runs-on: ubuntu-latest
     steps:         
@@ -33,6 +34,6 @@ jobs:
           tag: ${{ github.ref_name }}
         run: |
           gh release create $GITHUB_REF_NAME \
-              --repo="GITHUB_REPOSITORY \
+              --repo="$GITHUB_REPOSITORY" \
               --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
               --generate-notes

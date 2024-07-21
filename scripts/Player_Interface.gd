@@ -1,5 +1,8 @@
 extends Node2D
 
+const ui_formation_node: PackedScene = preload("res://scenes/ui_formation_node.tscn")
+var pooled_formation_nodes: Array[Sprite3D] = []
+
 # MODULES
 const MODULE_LIST = preload("res://scripts/module_list.gd")
 const FORMATION = MODULE_LIST.SCRIPTS[MODULE_LIST.MODULES.FORMATION]
@@ -7,6 +10,7 @@ const FORMATION = MODULE_LIST.SCRIPTS[MODULE_LIST.MODULES.FORMATION]
 @onready var player_camera: Node3D = $camera_base
 @onready var player_camera_visibleunits_Area3D: Area3D = $camera_base/visibleunits_area3D
 @onready var ui_dragbox: NinePatchRect = $ui_dragbox
+@onready var ui_formation_nodes_tree: Node3D = $ui_formation_nodes
 
 const MIN_DRAG_SQUARED: int = 250
 
@@ -111,6 +115,10 @@ func update_ui_dragbox() -> void:
 		ui_dragbox.scale.y = -1
 	else:
 		ui_dragbox.scale.y = 1
+
+
+# func formation_nodes_pool_build() -> void:
+# 	var i: int = 
 
 # Move selection to given destination as a formation
 func selection_move_as_formation(where_to: Vector2) -> void:

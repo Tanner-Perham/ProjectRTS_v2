@@ -38,12 +38,13 @@ func _process(delta: float) -> void:
 	camera_automatic_pan(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if !camera_can_process: return
+
 	# Camera zoom controls
 	if event.is_action("camera_zoom_in"):
 		camera_zoom_direction = -1
 	elif event.is_action("camera_zoom_out"):
 		camera_zoom_direction = 1
-	pass
 
 # Moves the base of the camera
 func camera_base_move(delta:float) -> void:
@@ -99,7 +100,7 @@ func get_vector3_from_camera_raycast(camera_2D_coordinates:Vector2) -> Vector3:
 	var ray_parameters:PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_from, ray_to)
 
 	var result:Dictionary = camera.get_world_3d().get_direct_space_state().intersect_ray(ray_parameters)
-	print(result)
+	# print(result)
 	if result:
 		return result.position
 	else:

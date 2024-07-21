@@ -11,6 +11,11 @@ var pathing:bool = false
 var pathing_point:int = 0
 var path_points_packed:PackedVector3Array
 
+var selected: bool = false:
+	set(new_value):
+		selected = new_value
+		update_selected(selected)
+
 # OBJ ATTRIBUTES / DATA
 var obj_data:Dictionary = {"SPEED": 8.0}
 
@@ -18,13 +23,14 @@ func _ready() -> void:
 	await(get_tree().process_frame)
 	global_position = NavigationServer3D.map_get_closest_point(map_RID, global_position)
 	unit_graphic.position.y = - NavigationServer3D.map_get_cell_height(map_RID) * 2
-	unselected()
+	selected = false
 
-func selected() -> void:
-	selected_graphic.visible = true
+func update_selected(selected: bool) -> void:
+	if selected:
+		selected_graphic.show()
+	else:
+		selected_graphic.hide()
 
-func unselected() -> void:
-	selected_graphic.visible = false
 	
 func unit_path_new(goal_position: Vector3) -> void:
 	var safe_goal:Vector3 = NavigationServer3D.map_get_closest_point(map_RID, goal_position)

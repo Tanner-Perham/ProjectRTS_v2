@@ -13,7 +13,7 @@ const FORMATION = MODULE_LIST.SCRIPTS[MODULE_LIST.MODULES.FORMATION]
 @onready var ui_formation_nodes_tree: Node3D = $ui_formation_nodes
 
 # CONSTANTS
-const MIN_DRAG_SQUARED: int = 250
+const MIN_DRAG_SQUARED: int = 128
 enum INPUT_STATES{
 	IDLE,
 	DRAGBOX_SELECTION,
@@ -98,15 +98,23 @@ func _input(event: InputEvent) -> void:
 
 						selection_move_as_formation(goal2D)
 
-			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if Input.is_action_just_pressed('mouse_leftclick'):
 				mouse_pressed_pos = mouse_position
-				if event.pressed:
-					drag_rectangle_area.position = get_global_mouse_position()
-					ui_dragbox.position = drag_rectangle_area.position
-					mouse_left_click = true
+				drag_rectangle_area.position = mouse_pressed_pos
+				ui_dragbox.position = drag_rectangle_area.position
+				mouse_left_click = true
+			if Input.is_action_just_released('mouse_leftclick'):
+				mouse_left_click = false
+
+				var shift: bool = Input.is_action_pressed('shift')
+
+				if drag_rectangle_area.size.length_squared() > MIN_DRAG_SQUARED:
+					dragbox_cast_selection(shift)
 				else:
-					mouse_left_click = false
-					cast_selection()
+					single_cast_selection(mouse_pressed_pos, shift)
+
+				print(selected_units)
+
 				
 		INPUT_STATES.GROUP_FORMATION_SET:
 			if Input.is_action_pressed("mouse_rightclick"):
@@ -178,18 +186,57 @@ func _input(event: InputEvent) -> void:
 					for ui_node:Sprite3D in pooled_formation_nodes:
 						ui_node.hide()
 
-func cast_selection() -> void:
+
+func selection_add(unit: Node3D) -> void:
+	selected_units[unit.get_instance_id()] = unit
+	unit.selected = true
+
+func selection_select_array(unit_array: Array[Node3D]) -> void:
+	selection_clear()
+	for unit: Node3D in unit_array:
+		selection_add(unit)
+
+func selection_clear() -> void:
+	for unit in selected_units.values():
+		unit.selected = false
+	selected_units.clear()
+
+func single_cast_selection(mouse_2D_pos: Vector2, shift: bool) -> void:
+	for unit in available_units.values():
+		if unit.player_owner != player_id:
+			continue
+		var unit_2D_pos: Vector2 = player_camera.camera.unproject_position( (unit as Node3D).transform.origin + Vector3(0, 0.85, 0))
+
+		if (mouse_2D_pos.distance_to(unit_2D_pos)) < 10.5:
+			if shift:
+				if selected_units.has(unit.get_instance_id()):
+					selected_units.erase(unit.get_instance_id())
+					unit.selected = false
+				else:
+					selection_add(unit)
+				return
+			else:
+				selection_select_array([unit])
+				return
+	
+	selection_clear()
+
+func dragbox_cast_selection(shift: bool) -> void:
+	var units_captured: Array[Node3D] = []
 	for unit in available_units.values():
 		# Check if the unit belongs to the player
 		if unit.player_owner != player_id:
 			continue
 		if drag_rectangle_area.abs().has_point(player_camera.get_Vector2_from_Vector3(unit.transform.origin)):
-			selected_units[unit.get_instance_id()] = unit
-			unit.selected()
+			units_captured.append(unit)
+	if units_captured:
+		if shift:
+			for unit in units_captured:
+				selection_add(unit)
 		else:
-			# Remove units no longer selected
-			unit.unselected()
-			selected_units.erase(unit.get_instance_id())
+			selection_select_array(units_captured)
+	else:
+		selection_clear()
 	print(selected_units)
 
 func _process(delta: float) -> void:
@@ -240,3 +287,6 @@ func selection_move_as_formation(where_to: Vector2) -> void:
 			unit.unit_path_new(pos)
 
 			i += 1
+	else:
+		var unit: Node3D = selected_units.values()[0]
+		unit.unit_path_new(Vector3(where_to.x, unit.position.y, where_to.y))

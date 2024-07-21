@@ -30,6 +30,7 @@ var _formation_rotation: float = 90.0
 
 
 func _ready() -> void:
+	formation_nodes_pool_build()
 	initialise_interface()
 	
 
@@ -41,13 +42,13 @@ func unit_entered(unit: Node3D) -> void:
 	if available_units.has(unit_id):
 		return
 	available_units[unit_id] = unit.get_parent()
-	print("unit_entered:", unit, "id:", unit_id, "unit_node:", unit.get_parent())
+	#print("unit_entered:", unit, "id:", unit_id, "unit_node:", unit.get_parent())
 
 func unit_exited(unit: Node3D) -> void:
 	var unit_id: int = unit.get_instance_id()
 	if available_units.has(unit_id):
 		available_units.erase(unit_id)
-	print("unit_exited:", unit, "id:", unit_id, "unit_node:", unit.get_parent())
+	#print("unit_exited:", unit, "id:", unit_id, "unit_node:", unit.get_parent())
 
 func debug_units_selected() -> void:
 	print(available_units)
@@ -62,7 +63,7 @@ func _input(event: InputEvent) -> void:
 		if !selected_units.is_empty():
 			var mouse_right_click_position:Vector2 = get_global_mouse_position()
 			var camera_raycast_coordinates:Vector3 = player_camera.get_vector3_from_camera_raycast(mouse_right_click_position)
-			print(camera_raycast_coordinates)
+
 			if camera_raycast_coordinates != Vector3.ZERO:
 				var goal2D: Vector2 = Vector2(
 					camera_raycast_coordinates.x,
@@ -94,7 +95,7 @@ func cast_selection() -> void:
 			# Remove units no longer selected
 			unit.unselected()
 			selected_units.erase(unit.get_instance_id())
-	print(selected_units)
+
 
 func _process(delta: float) -> void:
 	if mouse_left_click:
@@ -117,8 +118,13 @@ func update_ui_dragbox() -> void:
 		ui_dragbox.scale.y = 1
 
 
-# func formation_nodes_pool_build() -> void:
-# 	var i: int = 
+func formation_nodes_pool_build() -> void:
+	var i: int = 25
+	for formation_node in range(0, i):
+		var instanced_formation_node: Sprite3D = ui_formation_node.instantiate()
+		ui_formation_nodes_tree.add_child(instanced_formation_node)
+		instanced_formation_node.show()
+		pooled_formation_nodes.append(instanced_formation_node)
 
 # Move selection to given destination as a formation
 func selection_move_as_formation(where_to: Vector2) -> void:

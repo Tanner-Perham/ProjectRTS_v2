@@ -1,6 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://cr5rupu87d3pp"]
-
-[ext_resource type="Texture2D" path="res://image/Dropped Image (2).png" id="1_ixe8v"]
+[gd_scene format=3 uid="uid://cr5rupu87d3pp"]
 
 [node name="ui_formation_node" type="Sprite3D"]
 flip_v = true
@@ -8,4 +6,3 @@ modulate = Color(1, 1, 1, 0.427451)
 axis = 1
 double_sided = false
 no_depth_test = true
-texture = ExtResource("1_ixe8v")

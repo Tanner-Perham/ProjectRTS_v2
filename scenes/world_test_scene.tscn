@@ -76,6 +76,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.500004, -61.7828)
 top_level = true
 shape = SubResource("BoxShape3D_fabqq")
 
+[node name="ui_formation_nodes" type="Node3D" parent="Player_Interface"]
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_44kk3")
 

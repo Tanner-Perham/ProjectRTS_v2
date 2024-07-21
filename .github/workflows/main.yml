@@ -2,38 +2,54 @@ name: Godot Export
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    tags: 
+      - "v*"
+  #   branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
 
-  workflow_dispatch:
+  # workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions: write-all
 
     steps:
       - uses: actions/checkout@v3
       - name: exportGame
+        id: export
         uses: firebelley/godot-export@v5.2.1
         with: 
           godot_executable_download_url: http://downloads.tuxfamily.org/godotengine/4.2.2/Godot_v4.2.2-stable_linux.x86_64.zip
           godot_export_templates_download_url: http://downloads.tuxfamily.org/godotengine/4.2.2/Godot_v4.2.2-stable_export_templates.tpz
           relative_project_path: ./
+          use_preset_export_path: true
+          archive_output: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
-  release:
-    permissions: write-all
-    name: Release pushed tag
-    runs-on: ubuntu-latest
-    steps:         
-      - name: Create release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: create release
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generateReleaseNotes: true
           tag: ${{ github.ref_name }}
-        run: |
-          gh release create $GITHUB_REF_NAME \
-              --repo="$GITHUB_REPOSITORY" \
-              --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
-              --generate-notes
+          artifacts: ${{ steps.export.outputs.archive_directory }}/*
+
+  
+  # release:
+  #   permissions: write-all
+  #   name: Release pushed tag
+  #   runs-on: ubuntu-latest
+  #   steps:         
+  #     - name: Create release
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         tag: ${{ github.ref_name }}
+  #       run: |
+  #         gh release create $GITHUB_REF_NAME \
+  #             --repo="$GITHUB_REPOSITORY" \
+  #             --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+  #             --generate-notes
+

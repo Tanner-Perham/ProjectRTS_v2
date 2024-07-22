@@ -4,6 +4,7 @@ extends Node3D
 @onready var selected_graphic:Sprite3D = $selected
 @onready var unit_graphic:Node3D = $Test_Unit_01
 @onready var map_RID:RID = get_world_3d().get_navigation_map()
+@onready var animation_player:AnimationPlayer = $Test_Unit_01/mixamo_base/AnimationPlayer2
 
 @export var player_owner: String
 
@@ -40,6 +41,8 @@ func unit_path_new(goal_position: Vector3) -> void:
 
 func _physics_process(delta: float) -> void:
 	if pathing:
+		if animation_player.current_animation != "walking":
+			animation_player.play("walking")
 		var path_next_point:Vector3 = path_points_packed[pathing_point] - global_position
 		if path_next_point.length_squared() > 1.0:
 			var velocity:Vector3 = (path_next_point.normalized() * delta) * obj_data["SPEED"]
@@ -50,7 +53,13 @@ func _physics_process(delta: float) -> void:
 				pathing_point += 1 # Grab next path point
 				_physics_process(delta)
 			else:
-				pathing = false 
+				pathing = false
+				if animation_player.current_animation != "idle":
+					animation_player.play("idle")
+	else:
+		if animation_player.current_animation != "idle":
+			animation_player.play("idle")
+
 
 func unit_rotate_to_direction(direction:Vector3) -> void:
 	rotation.y = atan2(-direction.x, -direction.z)

@@ -540,6 +540,7 @@ tracks/74/keys = PackedFloat32Array(0, 1, 0.353656, 0.000644288, -3.46792e-05, 0
 [sub_resource type="Animation" id="Animation_dwhha"]
 resource_name = "idle"
 length = 8.35
+loop_mode = 1
 tracks/0/type = "position_3d"
 tracks/0/imported = true
 tracks/0/enabled = true
@@ -2127,6 +2128,7 @@ tracks/74/keys = PackedFloat32Array(0, 1, 0.344242, 3.54777e-08, -1.14162e-07, 0
 [sub_resource type="Animation" id="Animation_gnvi8"]
 resource_name = "running"
 length = 0.716667
+loop_mode = 1
 tracks/0/type = "position_3d"
 tracks/0/imported = true
 tracks/0/enabled = true
@@ -3216,6 +3218,7 @@ transform = Transform3D(-1.45, 0, -1.26763e-07, 0, 1.45, 0, 1.26763e-07, 0, -1.4
 libraries = {
 "": SubResource("AnimationLibrary_3sc3c")
 }
+playback_default_blend_time = 0.2
 
 [node name="CharacterBody3D" type="CharacterBody3D" parent="."]
 

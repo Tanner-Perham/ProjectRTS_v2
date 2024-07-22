@@ -10,8 +10,8 @@ extends Node3D
 # camera_zoom
 var camera_zoom_direction:float = 0.0
 @export_range(0, 100, 1) var camera_zoom_speed: float = 50.0
-@export_range(-100, 100, 1) var camera_zoom_min: float = -20
-@export_range(0, 100, 1) var camera_zoom_max: float = 25.0
+@export_range(-100, 100, 1) var camera_zoom_min: float = -50.0
+@export_range(0, 100, 1) var camera_zoom_max: float = 50.0
 @export_range(0,2,0.1) var camera_zoom_speed_damp: float = 0.92
 #@export_range(0, 100, 1) var camera_zoom_max: float = 50.0
 

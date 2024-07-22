@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://cfad5wy2om38f"]
+[gd_scene load_steps=7 format=3 uid="uid://cfad5wy2om38f"]
 
 [ext_resource type="Texture2D" uid="uid://o4e4wrbs2rrl" path="res://image/selectionbox.png" id="1_cm1re"]
 [ext_resource type="Script" path="res://scripts/test_unit.gd" id="1_h12qa"]
+[ext_resource type="PackedScene" uid="uid://wm2vna1u0sk2" path="res://assets/mixamo_base.glb" id="2_ic0df"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_v7qkx"]
 
@@ -16,12 +17,16 @@ script = ExtResource("1_h12qa")
 
 [node name="Body" type="MeshInstance3D" parent="Test_Unit_01"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+visible = false
 mesh = SubResource("CapsuleMesh_v7qkx")
 skeleton = NodePath("../..")
 
 [node name="Direction_Arrow" type="MeshInstance3D" parent="Test_Unit_01"]
 transform = Transform3D(1, 0, 0, 0, -2.18557e-08, 0.2, 0, -0.5, -8.74228e-09, 0, 0.2, -1)
 mesh = SubResource("PrismMesh_64iok")
+
+[node name="mixamo_base" parent="Test_Unit_01" instance=ExtResource("2_ic0df")]
+transform = Transform3D(-1.45, 0, -1.26763e-07, 0, 1.45, 0, 1.26763e-07, 0, -1.45, 0, 0, 0)
 
 [node name="CharacterBody3D" type="CharacterBody3D" parent="."]
 

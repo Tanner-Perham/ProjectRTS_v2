@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://o4e4wrbs2rrl" path="res://image/selectionbox.png" id="1_cm1re"]
 [ext_resource type="Script" path="res://scripts/test_unit.gd" id="1_h12qa"]
-[ext_resource type="PackedScene" uid="uid://wm2vna1u0sk2" path="res://assets/mixamo_base.glb" id="2_ic0df"]
+[ext_resource type="PackedScene" path="res://assets/mixamo_base.glb" id="2_ic0df"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_v7qkx"]
 

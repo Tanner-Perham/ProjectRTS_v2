@@ -19,7 +19,7 @@ var camera_zoom_direction:float = 0.0
 var camera_can_process:bool = true
 var camera_can_move_base:bool = true
 var camera_can_zoom:bool = true
-var camera_can_automatic_pan:bool = false
+var camera_can_automatic_pan:bool = true
 
 # Nodes
 @onready var camera_socket:Node3D = $camera_socket

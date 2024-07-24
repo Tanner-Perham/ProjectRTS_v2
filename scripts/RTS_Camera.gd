@@ -7,6 +7,13 @@ extends Node3D
 @export_range(0,32,4) var camera_automatic_pan_margin:int = 16
 @export_range(0,20,0.5) var camera_automatic_pan_speed:float = 40
 
+# camera_rotation
+var camera_rotation_direction: int = 0
+@export_range(0, 10, 0.1) var camera_rotation_speed: float = 0.20
+@export_range(0, 20, 1) var camera_base_rotation_speed: float = 10
+@export_range(0, 10, 1) var camera_socket_rotation_x_min: float = -0.20
+@export_range(0, 10, 1) var camera_socket_rotation_x_max: float = -1.20
+
 # camera_zoom
 var camera_zoom_direction:float = 0.0
 @export_range(0, 100, 1) var camera_zoom_speed: float = 50.0
@@ -20,6 +27,7 @@ var camera_can_process:bool = true
 var camera_can_move_base:bool = true
 var camera_can_zoom:bool = true
 var camera_can_automatic_pan:bool = true
+var camera_can_rotate_socket_x: bool = true
 
 # Nodes
 @onready var camera_socket:Node3D = $camera_socket
@@ -67,7 +75,19 @@ func camera_zoom_update(delta:float) -> void:
 	
 	camera.position.z = new_zoom
 	camera_zoom_direction *= camera_zoom_speed_damp
-	
+
+func camera_socket_rotate_x(delta: float, dir: float) -> void:
+	if !camera_can_rotate_socket_x: return
+
+	var new_rotation_x: float = camera_socket.rotation.x
+	new_rotation_x -= dir * delta * camera_rotation_speed 
+
+	new_rotation_x = clamp(new_rotation_x, camera_socket_rotation_x_min, camera_socket_rotation_x_max)
+	camera_socket.rotation.x = new_rotation_x
+
+func camera_base_rotate_left_right(delta: float, dir: float) -> void:
+	rotation.y += dir * camera_rotation_speed * delta
+
 func camera_automatic_pan(delta: float) -> void:
 	if !camera_can_automatic_pan: return
 	

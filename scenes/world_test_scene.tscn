@@ -1,13 +1,8 @@
-[gd_scene load_steps=14 format=3 uid="uid://cjqgbnv2uf5rv"]
+[gd_scene load_steps=11 format=3 uid="uid://cjqgbnv2uf5rv"]
 
-[ext_resource type="Script" uid="uid://bug0to2bo4wi" path="res://scripts/RTS_Camera.gd" id="1_fy7df"]
-[ext_resource type="Script" uid="uid://d1bursc6as6l1" path="res://scripts/Player_Interface.gd" id="1_pfsqw"]
+[ext_resource type="PackedScene" uid="uid://cdykdax77yjlk" path="res://scenes/Player.tscn" id="1_y8mov"]
 [ext_resource type="PackedScene" uid="uid://by83x3paktynw" path="res://gltf/building.dae" id="2_1lx0s"]
-[ext_resource type="Texture2D" uid="uid://o4e4wrbs2rrl" path="res://image/selectionbox.png" id="2_tsw7g"]
 [ext_resource type="PackedScene" uid="uid://cfad5wy2om38f" path="res://scenes/test_unit.tscn" id="4_k6mqi"]
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_fabqq"]
-size = Vector3(325, 1, 170.624)
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fvuv"]
 sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
@@ -35,48 +30,7 @@ albedo_color = Color(0.0901961, 0.0901961, 0.0901961, 1)
 
 [node name="World" type="Node3D"]
 
-[node name="Player_Interface" type="Node2D" parent="."]
-script = ExtResource("1_pfsqw")
-metadata/_edit_lock_ = true
-
-[node name="Button" type="Button" parent="Player_Interface"]
-offset_left = 23.0
-offset_top = 601.0
-offset_right = 190.0
-offset_bottom = 632.0
-text = "Player Test Interface"
-
-[node name="ui_dragbox" type="NinePatchRect" parent="Player_Interface"]
-offset_left = 143.0
-offset_top = 60.0
-offset_right = 586.0
-offset_bottom = 412.0
-texture = ExtResource("2_tsw7g")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-
-[node name="camera_base" type="Node3D" parent="Player_Interface"]
-script = ExtResource("1_fy7df")
-camera_move_speed = 40.0
-
-[node name="camera_socket" type="Node3D" parent="Player_Interface/camera_base"]
-transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 60, 0)
-
-[node name="Camera3D" type="Camera3D" parent="Player_Interface/camera_base/camera_socket"]
-size = 50.753
-far = 8000.1
-
-[node name="visibleunits_area3D" type="Area3D" parent="Player_Interface/camera_base"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.500004, 1.90735e-06)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Player_Interface/camera_base/visibleunits_area3D"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.500004, -61.7828)
-top_level = true
-shape = SubResource("BoxShape3D_fabqq")
-
-[node name="ui_formation_nodes" type="Node3D" parent="Player_Interface"]
+[node name="Player_Interface" parent="." instance=ExtResource("1_y8mov")]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_44kk3")

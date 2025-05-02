@@ -1,7 +1,7 @@
 [gd_scene load_steps=14 format=3 uid="uid://cjqgbnv2uf5rv"]
 
-[ext_resource type="Script" path="res://scripts/RTS_Camera.gd" id="1_fy7df"]
-[ext_resource type="Script" path="res://scripts/Player_Interface.gd" id="1_pfsqw"]
+[ext_resource type="Script" uid="uid://bug0to2bo4wi" path="res://scripts/RTS_Camera.gd" id="1_fy7df"]
+[ext_resource type="Script" uid="uid://d1bursc6as6l1" path="res://scripts/Player_Interface.gd" id="1_pfsqw"]
 [ext_resource type="PackedScene" uid="uid://by83x3paktynw" path="res://gltf/building.dae" id="2_1lx0s"]
 [ext_resource type="Texture2D" uid="uid://o4e4wrbs2rrl" path="res://image/selectionbox.png" id="2_tsw7g"]
 [ext_resource type="PackedScene" uid="uid://cfad5wy2om38f" path="res://scenes/test_unit.tscn" id="4_k6mqi"]

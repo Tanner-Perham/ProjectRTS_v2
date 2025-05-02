@@ -1,7 +1,7 @@
 [gd_scene load_steps=14 format=3 uid="uid://cfad5wy2om38f"]
 
 [ext_resource type="Texture2D" uid="uid://o4e4wrbs2rrl" path="res://image/selectionbox.png" id="1_cm1re"]
-[ext_resource type="Script" path="res://scripts/test_unit.gd" id="1_h12qa"]
+[ext_resource type="Script" uid="uid://dxcsmnywfolfe" path="res://scripts/test_unit.gd" id="1_h12qa"]
 [ext_resource type="PackedScene" uid="uid://wm2vna1u0sk2" path="res://assets/mixamo_base.glb" id="2_ic0df"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_v7qkx"]
@@ -3186,12 +3186,12 @@ tracks/74/keys = PackedFloat32Array(0, 1, 0.348095, 1.67506e-08, -1.2864e-07, 0.
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_3sc3c"]
 _data = {
-"get_up": SubResource("Animation_nmqph"),
-"idle": SubResource("Animation_dwhha"),
-"kick": SubResource("Animation_5lbs1"),
-"knock_down": SubResource("Animation_x6cpe"),
-"running": SubResource("Animation_gnvi8"),
-"walking": SubResource("Animation_7xvmu")
+&"get_up": SubResource("Animation_nmqph"),
+&"idle": SubResource("Animation_dwhha"),
+&"kick": SubResource("Animation_5lbs1"),
+&"knock_down": SubResource("Animation_x6cpe"),
+&"running": SubResource("Animation_gnvi8"),
+&"walking": SubResource("Animation_7xvmu")
 }
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jx1po"]

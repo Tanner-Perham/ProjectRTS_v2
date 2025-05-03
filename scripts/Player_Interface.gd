@@ -269,24 +269,35 @@ func formation_nodes_pool_build() -> void:
 		pooled_formation_nodes.append(instanced_formation_node)
 
 # Move selection to given destination as a formation
-func selection_move_as_formation(where_to: Vector2) -> void:
+func selection_move_as_formation(goal2D: Vector2) -> void:
 	var selection_size: int = selected_units.size()
+	
 	if selection_size > 1:
+		# FORMATION SETUP
 		var formation_positions: PackedVector2Array = FORMATION.return_formation_positions(
-			where_to,
+			goal2D,
 			selected_units.values(),
 			[_formation_divisor, _formation_spread, _formation_rotation]
-			)
+		)
+		
 		var i: int = 0
 		for unit in selected_units.values():
-			var pos: Vector3 = Vector3(
-				formation_positions[i].x,
+			var formation_pos: Vector2 = formation_positions[i]
+			var target3D: Vector3 = Vector3(
+				formation_pos.x,
 				unit.position.y,
-				formation_positions[i].y
+				formation_pos.y
 			)
-			unit.unit_path_new(pos)
-
+			
+			# Only send commands to units you own in multiplayer
+			if unit.player_owner == player_id:
+				unit.unit_path_new(target3D)
+			
 			i += 1
 	else:
+		# Single unit movement
 		var unit: Node3D = selected_units.values()[0]
-		unit.unit_path_new(Vector3(where_to.x, unit.position.y, where_to.y))
+		
+		# Only send commands to units you own in multiplayer
+		if unit.player_owner == player_id:
+			unit.unit_path_new(Vector3(goal2D.x, unit.position.y, goal2D.y))

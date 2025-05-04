@@ -197,6 +197,11 @@ func _input(event: InputEvent) -> void:
 
 
 func selection_add(unit: Node3D) -> void:
+	# If we already have units selected, only allow adding units that belong to the player
+	if not selected_units.is_empty() and unit.player_owner != player_id:
+		print("Cannot add enemy units to multi-selection")
+		return
+		
 	selected_units[unit.get_instance_id()] = unit
 	unit.selected = true
 
@@ -215,7 +220,12 @@ func single_cast_selection(mouse_2D_pos: Vector2, shift: bool) -> void:
 		var unit_2D_pos: Vector2 = player_camera.camera.unproject_position( (unit as Node3D).transform.origin + Vector3(0, 0.85, 0))
 
 		if (mouse_2D_pos.distance_to(unit_2D_pos)) < 10.5:
+			# If using shift to multi-select, only allow selecting own units
 			if shift:
+				# If trying to multi-select an enemy unit, ignore
+				if unit.player_owner != player_id and not selected_units.is_empty():
+					return
+					
 				if selected_units.has(unit.get_instance_id()):
 					selected_units.erase(unit.get_instance_id())
 					unit.selected = false
@@ -231,11 +241,19 @@ func single_cast_selection(mouse_2D_pos: Vector2, shift: bool) -> void:
 func dragbox_cast_selection(shift: bool) -> void:
 	var units_captured: Array[Node3D] = []
 	for unit in available_units.values():
-		# Check if the unit belongs to the player
+		# Check if the unit belongs to the player - ONLY include units owned by this player
 		if unit.player_owner != player_id:
 			continue
+			
 		if drag_rectangle_area.abs().has_point(player_camera.get_Vector2_from_Vector3(unit.transform.origin)):
 			units_captured.append(unit)
+			
+	if units_captured:
+		for unit in units_captured:
+			if unit.player_owner != player_id:
+				units_captured.erase(unit)
+
+	print(units_captured)
 	if units_captured:
 		if shift:
 			for unit in units_captured:

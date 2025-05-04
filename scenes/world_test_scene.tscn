@@ -1,7 +1,6 @@
-[gd_scene load_steps=13 format=3 uid="uid://cjqgbnv2uf5rv"]
+[gd_scene load_steps=12 format=3 uid="uid://cjqgbnv2uf5rv"]
 
 [ext_resource type="Script" uid="uid://hq0vuwrwygpv" path="res://scripts/world.gd" id="1_uf3he"]
-[ext_resource type="PackedScene" uid="uid://cdykdax77yjlk" path="res://scenes/Player.tscn" id="1_y8mov"]
 [ext_resource type="PackedScene" uid="uid://by83x3paktynw" path="res://gltf/building.dae" id="2_1lx0s"]
 [ext_resource type="PackedScene" uid="uid://cfad5wy2om38f" path="res://scenes/test_unit.tscn" id="4_k6mqi"]
 [ext_resource type="PackedScene" uid="uid://djtawjxwim072" path="res://scenes/debug_info.tscn" id="5_wjhqw"]
@@ -32,8 +31,6 @@ albedo_color = Color(0.0901961, 0.0901961, 0.0901961, 1)
 
 [node name="World" type="Node"]
 script = ExtResource("1_uf3he")
-
-[node name="Player_Interface" parent="." instance=ExtResource("1_y8mov")]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_44kk3")

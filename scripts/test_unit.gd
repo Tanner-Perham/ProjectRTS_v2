@@ -17,21 +17,38 @@ extends Node3D
 # The direct position variable
 var sync_position: Vector3 = Vector3.ZERO
 var sync_rotation: Vector3 = Vector3.ZERO
+var sync_animation: String = "idle"
 
 var pathing:bool = false:
 	set(value):
 		pathing = value
 		# Update animation state when pathing changes
-		if pathing and animation_player.current_animation != "walking":
-			animation_player.play("walking")
-		elif not pathing and animation_player.current_animation != "idle":
-			animation_player.play("idle")
+		update_animation_state()
 
 var pathing_point:int = 0
 var path_points_packed:PackedVector3Array
 
 var selected: bool = false:
 	set(new_value):
+		# Network authority overrides local selection
+		if multiplayer.has_multiplayer_peer():
+			# For enemy units, only allow single selection
+			var current_player_id = str(multiplayer.get_unique_id())
+			
+			# If this is someone else's unit, we need to handle selection differently
+			if player_owner != current_player_id:
+				# Count how many units are already selected by this client
+				var existing_selection_count = 0
+				var player_interface = get_tree().root.get_node_or_null("World/" + current_player_id + "/Player_Interface")
+				if player_interface:
+					existing_selection_count = player_interface.selected_units.size()
+				
+				# If we're adding to an existing selection (2+ units would be selected), don't allow it
+				if new_value and existing_selection_count >= 1:
+					print("Prevented multi-selecting enemy unit")
+					return
+		
+		# Apply the selection change
 		selected = new_value
 		update_selected(selected)
 
@@ -44,11 +61,22 @@ func _ready() -> void:
 	unit_graphic.position.y = - NavigationServer3D.map_get_cell_height(map_RID) * 2
 	selected = false
 	
+	# Ensure animations work even if initial animation_player ref is null
+	if animation_player:
+		animation_player.play("idle")
+	else:
+		# Try to get reference again after a short delay
+		await get_tree().create_timer(0.2).timeout
+		animation_player = $Test_Unit_01/mixamo_base/AnimationPlayer2
+		if animation_player:
+			animation_player.play("idle")
+	
 	# Setup multiplayer authority - server has authority over all units
 	if multiplayer.has_multiplayer_peer():
 		# Set the initial sync position for clients
 		sync_position = global_position
 		sync_rotation = global_rotation
+		sync_animation = "idle"
 		
 		if multiplayer_synchronizer:
 			# Server has authority over units
@@ -59,6 +87,34 @@ func _ready() -> void:
 		# Initial position should be synced to clients
 		rpc("update_client_transform", global_position, global_rotation)
 		rpc("update_player_owner", player_owner)
+		rpc("sync_animation_state", "idle")
+
+func update_animation_state() -> void:
+	if not animation_player:
+		animation_player = $Test_Unit_01/mixamo_base/AnimationPlayer2
+		if not animation_player:
+			return
+			
+	if pathing and animation_player.current_animation != "walking":
+		animation_player.play("walking")
+		if is_multiplayer_authority():
+			rpc("sync_animation_state", "walking")
+	elif not pathing and animation_player.current_animation != "idle":
+		animation_player.play("idle")
+		if is_multiplayer_authority():
+			rpc("sync_animation_state", "idle")
+
+@rpc("authority", "call_remote")
+func sync_animation_state(anim_name: String) -> void:
+	sync_animation = anim_name
+	
+	if not animation_player:
+		animation_player = $Test_Unit_01/mixamo_base/AnimationPlayer2
+		if not animation_player:
+			return
+			
+	if animation_player.current_animation != anim_name:
+		animation_player.play(anim_name)
 
 @rpc("authority", "call_remote")
 func update_player_owner(new_owner: String) -> void:
@@ -71,6 +127,10 @@ func _process(_delta: float) -> void:
 			global_position = sync_position
 		if sync_rotation != Vector3.ZERO:
 			global_rotation = sync_rotation
+			
+		# Ensure animations are playing on client
+		if animation_player and animation_player.current_animation != sync_animation:
+			animation_player.play(sync_animation)
 
 func update_selected(selected: bool) -> void:
 	if selected:

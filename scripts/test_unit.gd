@@ -7,7 +7,12 @@ extends Node3D
 @onready var animation_player:AnimationPlayer = $Test_Unit_01/mixamo_base/AnimationPlayer2
 @onready var multiplayer_synchronizer:MultiplayerSynchronizer = $MultiplayerSynchronizer
 
-@export var player_owner: String
+@export var player_owner: String:
+	set(new_value):
+		player_owner = new_value
+		# When we set player_owner, we need to sync this to all clients
+		if multiplayer_synchronizer and multiplayer_synchronizer.get_multiplayer_authority() == multiplayer.get_unique_id():
+			rpc("update_player_owner", new_value)
 
 # The direct position variable
 var sync_position: Vector3 = Vector3.ZERO
@@ -39,14 +44,29 @@ func _ready() -> void:
 	unit_graphic.position.y = - NavigationServer3D.map_get_cell_height(map_RID) * 2
 	selected = false
 	
-	# Setup multiplayer authority
-	if multiplayer_synchronizer:
-		# Only server has authority over units
-		multiplayer_synchronizer.set_multiplayer_authority(1) # 1 is typically the server
+	# Setup multiplayer authority - server has authority over all units
+	if multiplayer.has_multiplayer_peer():
+		# Set the initial sync position for clients
+		sync_position = global_position
+		sync_rotation = global_rotation
+		
+		if multiplayer_synchronizer:
+			# Server has authority over units
+			multiplayer_synchronizer.set_multiplayer_authority(1)
+			
+	# Force a position update to ensure clients see the unit in the right place
+	if multiplayer.is_server():
+		# Initial position should be synced to clients
+		rpc("update_client_transform", global_position, global_rotation)
+		rpc("update_player_owner", player_owner)
+
+@rpc("authority", "call_remote")
+func update_player_owner(new_owner: String) -> void:
+	player_owner = new_owner
 
 func _process(_delta: float) -> void:
 	# Apply synced position/rotation for clients
-	if not is_multiplayer_authority():
+	if multiplayer.has_multiplayer_peer() and not is_multiplayer_authority():
 		if sync_position != Vector3.ZERO:
 			global_position = sync_position
 		if sync_rotation != Vector3.ZERO:
@@ -60,7 +80,7 @@ func update_selected(selected: bool) -> void:
 
 func unit_path_new(goal_position: Vector3) -> void:
 	# If we're not the server, send an RPC to the server
-	if not is_multiplayer_authority():
+	if multiplayer.has_multiplayer_peer() and not is_multiplayer_authority():
 		rpc_id(1, "server_unit_path_new", goal_position)
 		return
 		
@@ -80,7 +100,7 @@ func server_unit_path_new(goal_position: Vector3) -> void:
 
 func _physics_process(delta: float) -> void:
 	# Only process movement on the authority (server)
-	if not is_multiplayer_authority():
+	if multiplayer.has_multiplayer_peer() and not is_multiplayer_authority():
 		return
 		
 	if pathing:

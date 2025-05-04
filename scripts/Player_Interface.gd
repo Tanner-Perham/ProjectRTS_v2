@@ -12,6 +12,11 @@ const FORMATION = MODULE_LIST.SCRIPTS[MODULE_LIST.MODULES.FORMATION]
 @onready var ui_dragbox: NinePatchRect = $ui_dragbox
 @onready var ui_formation_nodes_tree: Node3D = $ui_formation_nodes
 
+@onready var game_interface: CanvasLayer = $GameInterface
+
+# TESTING
+@onready var spawn_unit_button: Button = $"GameInterface/PanelContainer/HBoxContainer/GridContainer/SpawnUnit"
+
 # CONSTANTS
 const MIN_DRAG_SQUARED: int = 128
 enum INPUT_STATES{
@@ -46,6 +51,10 @@ func _ready() -> void:
 	formation_nodes_pool_build()
 	initialise_interface()
 	
+	# Set player_id based on multiplayer client ID if in multiplayer
+	if multiplayer.has_multiplayer_peer():
+		player_id = str(multiplayer.get_unique_id())
+		print("Player interface initialized with multiplayer ID: ", player_id)
 
 func unit_entered(unit: Node3D) -> void:
 	"""
@@ -203,8 +212,6 @@ func selection_clear() -> void:
 
 func single_cast_selection(mouse_2D_pos: Vector2, shift: bool) -> void:
 	for unit in available_units.values():
-		if unit.player_owner != player_id:
-			continue
 		var unit_2D_pos: Vector2 = player_camera.camera.unproject_position( (unit as Node3D).transform.origin + Vector3(0, 0.85, 0))
 
 		if (mouse_2D_pos.distance_to(unit_2D_pos)) < 10.5:
@@ -301,3 +308,29 @@ func selection_move_as_formation(goal2D: Vector2) -> void:
 		# Only send commands to units you own in multiplayer
 		if unit.player_owner == player_id:
 			unit.unit_path_new(Vector3(goal2D.x, unit.position.y, goal2D.y))
+
+# TESTING
+func _on_spawn_unit_pressed() -> void:
+	# Get the camera's center position for spawning
+	var camera_center = Vector2(get_viewport().get_visible_rect().size / 2)
+	var spawn_position_3D = player_camera.get_vector3_from_camera_raycast(camera_center)
+	
+	# If raycast failed, use camera position instead
+	if spawn_position_3D == Vector3.ZERO:
+		spawn_position_3D = player_camera.global_position
+		spawn_position_3D.y = 0  # Ensure unit spawns on the ground
+	
+	# Get the world node
+	var world = get_tree().root.get_node_or_null("World")
+	if world:
+		# Use the world's RPC function to spawn a unit properly in multiplayer
+		if multiplayer.is_server():
+			# Server directly spawns the unit
+			world.spawn_test_unit(spawn_position_3D, player_id)
+		else:
+			# Clients request the server to spawn a unit
+			world.rpc_id(1, "request_spawn_test_unit", spawn_position_3D)
+		
+		print("Requested unit spawn at: ", spawn_position_3D)
+	else:
+		print("ERROR: World node not found. Cannot spawn unit.")

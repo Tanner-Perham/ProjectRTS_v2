@@ -96,6 +96,12 @@ func server_unit_path_new(goal_position: Vector3) -> void:
 	if not is_multiplayer_authority():
 		return
 		
+	# Check that the command is from the unit's owner
+	var sender_id = str(multiplayer.get_remote_sender_id())
+	if sender_id != player_owner:
+		print("Movement command rejected: Unit belongs to ", player_owner, " but command sent by ", sender_id)
+		return
+		
 	unit_path_new(goal_position)
 
 func _physics_process(delta: float) -> void:

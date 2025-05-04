@@ -54,12 +54,18 @@ func spawn_test_unit(position: Vector3, owner_id: String) -> void:
 		return
 		
 	var unit = TestUnit.instantiate()
+	# Explicitly set the owner before adding to scene tree
 	unit.player_owner = owner_id
 	unit.global_position = position
 	
 	# Use add_child through the multiplayer API to ensure replication
 	# The multiplayer spawner will detect this and replicate to clients
 	add_child(unit, true)
+	
+	# Force an explicit update of player_owner to all clients
+	# This ensures ownership is correctly set across network
+	unit.rpc("update_player_owner", owner_id)
+	
 	print("Server spawned unit at position: ", position, " with owner: ", owner_id)
 	
 # Called by clients to request unit creation

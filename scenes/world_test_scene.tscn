@@ -1261,6 +1261,12 @@ text = "localhost"
 placeholder_text = "Enter Address to Join Here"
 alignment = 1
 
+[node name="Port Entry" type="LineEdit" parent="CanvasLayer/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "9999"
+placeholder_text = "Enter Address to Join Here"
+alignment = 1
+
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
 _spawnable_scenes = PackedStringArray("uid://cdykdax77yjlk", "uid://cfad5wy2om38f")
 spawn_path = NodePath("..")

@@ -2,6 +2,7 @@ extends Node
 
 @onready var main_menu = $CanvasLayer/MainMenu
 @onready var address_entry = $"CanvasLayer/MainMenu/MarginContainer/VBoxContainer/Address Entry"
+@onready var port_entry = $"CanvasLayer/MainMenu/MarginContainer/VBoxContainer/Port Entry"
 @onready var multiplayer_spawner = $MultiplayerSpawner
 
 @onready var debug_info = $DebugInfo
@@ -9,11 +10,12 @@ extends Node
 
 const Player = preload("res://scenes/Player.tscn")
 const TestUnit = preload("res://scenes/test_unit.tscn")
-const PORT = 9999
+var PORT = 9999
 const MAX_CLIENTS = 4
 var enet_peer = ENetMultiplayerPeer.new()
 
 func _ready():
+	PORT = int(port_entry.text)
 	# Configure the MultiplayerSpawner to include both Player and TestUnit scenes
 	if multiplayer_spawner:
 		# Set spawnable scenes properly - directly assign to the property

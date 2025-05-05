@@ -1,13 +1,9 @@
-[gd_scene load_steps=14 format=3 uid="uid://cjqgbnv2uf5rv"]
+[gd_scene load_steps=12 format=3 uid="uid://cjqgbnv2uf5rv"]
 
-[ext_resource type="Script" uid="uid://bug0to2bo4wi" path="res://scripts/RTS_Camera.gd" id="1_fy7df"]
-[ext_resource type="Script" uid="uid://d1bursc6as6l1" path="res://scripts/Player_Interface.gd" id="1_pfsqw"]
+[ext_resource type="Script" uid="uid://hq0vuwrwygpv" path="res://scripts/world.gd" id="1_uf3he"]
 [ext_resource type="PackedScene" uid="uid://by83x3paktynw" path="res://gltf/building.dae" id="2_1lx0s"]
-[ext_resource type="Texture2D" uid="uid://o4e4wrbs2rrl" path="res://image/selectionbox.png" id="2_tsw7g"]
 [ext_resource type="PackedScene" uid="uid://cfad5wy2om38f" path="res://scenes/test_unit.tscn" id="4_k6mqi"]
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_fabqq"]
-size = Vector3(325, 1, 170.624)
+[ext_resource type="PackedScene" uid="uid://djtawjxwim072" path="res://scenes/debug_info.tscn" id="5_wjhqw"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1fvuv"]
 sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
@@ -33,50 +29,8 @@ albedo_color = Color(0.0901961, 0.0901961, 0.0901961, 1)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ye6i6"]
 
-[node name="World" type="Node3D"]
-
-[node name="Player_Interface" type="Node2D" parent="."]
-script = ExtResource("1_pfsqw")
-metadata/_edit_lock_ = true
-
-[node name="Button" type="Button" parent="Player_Interface"]
-offset_left = 23.0
-offset_top = 601.0
-offset_right = 190.0
-offset_bottom = 632.0
-text = "Player Test Interface"
-
-[node name="ui_dragbox" type="NinePatchRect" parent="Player_Interface"]
-offset_left = 143.0
-offset_top = 60.0
-offset_right = 586.0
-offset_bottom = 412.0
-texture = ExtResource("2_tsw7g")
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-
-[node name="camera_base" type="Node3D" parent="Player_Interface"]
-script = ExtResource("1_fy7df")
-camera_move_speed = 40.0
-
-[node name="camera_socket" type="Node3D" parent="Player_Interface/camera_base"]
-transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 60, 0)
-
-[node name="Camera3D" type="Camera3D" parent="Player_Interface/camera_base/camera_socket"]
-size = 50.753
-far = 8000.1
-
-[node name="visibleunits_area3D" type="Area3D" parent="Player_Interface/camera_base"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.500004, 1.90735e-06)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Player_Interface/camera_base/visibleunits_area3D"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.500004, -61.7828)
-top_level = true
-shape = SubResource("BoxShape3D_fabqq")
-
-[node name="ui_formation_nodes" type="Node3D" parent="Player_Interface"]
+[node name="World" type="Node"]
+script = ExtResource("1_uf3he")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_44kk3")
@@ -1262,3 +1216,62 @@ skeleton = NodePath("../..")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="NavigationRegion3D/MeshInstance3D/StaticBody3D"]
 transform = Transform3D(1.99998, 0, 0, 0, 0.0399997, 0, 0, 0, 1.99998, 0, -0.022, 0)
 shape = SubResource("BoxShape3D_ye6i6")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="MainMenu" type="PanelContainer" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 442.0
+offset_top = 211.0
+offset_right = -442.0
+offset_bottom = -211.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/MainMenu"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/MainMenu/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="CanvasLayer/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Main Menu"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HostButton" type="Button" parent="CanvasLayer/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Host"
+
+[node name="JoinButton" type="Button" parent="CanvasLayer/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Join"
+
+[node name="Address Entry" type="LineEdit" parent="CanvasLayer/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "localhost"
+placeholder_text = "Enter Address to Join Here"
+alignment = 1
+
+[node name="Port Entry" type="LineEdit" parent="CanvasLayer/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "9999"
+placeholder_text = "Enter Address to Join Here"
+alignment = 1
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("uid://cdykdax77yjlk", "uid://cfad5wy2om38f")
+spawn_path = NodePath("..")
+
+[node name="DebugInfo" parent="." instance=ExtResource("5_wjhqw")]
+
+[connection signal="pressed" from="CanvasLayer/MainMenu/MarginContainer/VBoxContainer/HostButton" to="." method="_on_host_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/MainMenu/MarginContainer/VBoxContainer/JoinButton" to="." method="_on_join_button_pressed"]

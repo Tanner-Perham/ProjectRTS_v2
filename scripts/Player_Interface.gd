@@ -12,6 +12,11 @@ const FORMATION = MODULE_LIST.SCRIPTS[MODULE_LIST.MODULES.FORMATION]
 @onready var ui_dragbox: NinePatchRect = $ui_dragbox
 @onready var ui_formation_nodes_tree: Node3D = $ui_formation_nodes
 
+@onready var game_interface: CanvasLayer = $GameInterface
+
+# TESTING
+@onready var spawn_unit_button: Button = $"GameInterface/PanelContainer/HBoxContainer/GridContainer/SpawnUnit"
+
 # CONSTANTS
 const MIN_DRAG_SQUARED: int = 128
 enum INPUT_STATES{
@@ -46,6 +51,10 @@ func _ready() -> void:
 	formation_nodes_pool_build()
 	initialise_interface()
 	
+	# Set player_id based on multiplayer client ID if in multiplayer
+	if multiplayer.has_multiplayer_peer():
+		player_id = str(multiplayer.get_unique_id())
+		print("Player interface initialized with multiplayer ID: ", player_id)
 
 func unit_entered(unit: Node3D) -> void:
 	"""
@@ -188,6 +197,11 @@ func _input(event: InputEvent) -> void:
 
 
 func selection_add(unit: Node3D) -> void:
+	# If we already have units selected, only allow adding units that belong to the player
+	if not selected_units.is_empty() and unit.player_owner != player_id:
+		print("Cannot add enemy units to multi-selection")
+		return
+		
 	selected_units[unit.get_instance_id()] = unit
 	unit.selected = true
 
@@ -203,12 +217,15 @@ func selection_clear() -> void:
 
 func single_cast_selection(mouse_2D_pos: Vector2, shift: bool) -> void:
 	for unit in available_units.values():
-		if unit.player_owner != player_id:
-			continue
 		var unit_2D_pos: Vector2 = player_camera.camera.unproject_position( (unit as Node3D).transform.origin + Vector3(0, 0.85, 0))
 
 		if (mouse_2D_pos.distance_to(unit_2D_pos)) < 10.5:
+			# If using shift to multi-select, only allow selecting own units
 			if shift:
+				# If trying to multi-select an enemy unit, ignore
+				if unit.player_owner != player_id and not selected_units.is_empty():
+					return
+					
 				if selected_units.has(unit.get_instance_id()):
 					selected_units.erase(unit.get_instance_id())
 					unit.selected = false
@@ -224,11 +241,19 @@ func single_cast_selection(mouse_2D_pos: Vector2, shift: bool) -> void:
 func dragbox_cast_selection(shift: bool) -> void:
 	var units_captured: Array[Node3D] = []
 	for unit in available_units.values():
-		# Check if the unit belongs to the player
+		# Check if the unit belongs to the player - ONLY include units owned by this player
 		if unit.player_owner != player_id:
 			continue
+			
 		if drag_rectangle_area.abs().has_point(player_camera.get_Vector2_from_Vector3(unit.transform.origin)):
 			units_captured.append(unit)
+			
+	if units_captured:
+		for unit in units_captured:
+			if unit.player_owner != player_id:
+				units_captured.erase(unit)
+
+	print(units_captured)
 	if units_captured:
 		if shift:
 			for unit in units_captured:
@@ -269,24 +294,61 @@ func formation_nodes_pool_build() -> void:
 		pooled_formation_nodes.append(instanced_formation_node)
 
 # Move selection to given destination as a formation
-func selection_move_as_formation(where_to: Vector2) -> void:
+func selection_move_as_formation(goal2D: Vector2) -> void:
 	var selection_size: int = selected_units.size()
+	
 	if selection_size > 1:
+		# FORMATION SETUP
 		var formation_positions: PackedVector2Array = FORMATION.return_formation_positions(
-			where_to,
+			goal2D,
 			selected_units.values(),
 			[_formation_divisor, _formation_spread, _formation_rotation]
-			)
+		)
+		
 		var i: int = 0
 		for unit in selected_units.values():
-			var pos: Vector3 = Vector3(
-				formation_positions[i].x,
+			var formation_pos: Vector2 = formation_positions[i]
+			var target3D: Vector3 = Vector3(
+				formation_pos.x,
 				unit.position.y,
-				formation_positions[i].y
+				formation_pos.y
 			)
-			unit.unit_path_new(pos)
-
+			
+			# Only send commands to units you own in multiplayer
+			if unit.player_owner == player_id:
+				unit.unit_path_new(target3D)
+			
 			i += 1
 	else:
+		# Single unit movement
 		var unit: Node3D = selected_units.values()[0]
-		unit.unit_path_new(Vector3(where_to.x, unit.position.y, where_to.y))
+		
+		# Only send commands to units you own in multiplayer
+		if unit.player_owner == player_id:
+			unit.unit_path_new(Vector3(goal2D.x, unit.position.y, goal2D.y))
+
+# TESTING
+func _on_spawn_unit_pressed() -> void:
+	# Get the camera's center position for spawning
+	var camera_center = Vector2(get_viewport().get_visible_rect().size / 2)
+	var spawn_position_3D = player_camera.get_vector3_from_camera_raycast(camera_center)
+	
+	# If raycast failed, use camera position instead
+	if spawn_position_3D == Vector3.ZERO:
+		spawn_position_3D = player_camera.global_position
+		spawn_position_3D.y = 0  # Ensure unit spawns on the ground
+	
+	# Get the world node
+	var world = get_tree().root.get_node_or_null("World")
+	if world:
+		# Use the world's RPC function to spawn a unit properly in multiplayer
+		if multiplayer.is_server():
+			# Server directly spawns the unit
+			world.spawn_test_unit(spawn_position_3D, player_id)
+		else:
+			# Clients request the server to spawn a unit
+			world.rpc_id(1, "request_spawn_test_unit", spawn_position_3D)
+		
+		print("Requested unit spawn at: ", spawn_position_3D)
+	else:
+		print("ERROR: World node not found. Cannot spawn unit.")

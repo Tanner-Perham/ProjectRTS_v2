@@ -1,8 +1,9 @@
-[gd_scene load_steps=15 format=3 uid="uid://cfad5wy2om38f"]
+[gd_scene load_steps=16 format=3 uid="uid://cfad5wy2om38f"]
 
 [ext_resource type="Texture2D" uid="uid://o4e4wrbs2rrl" path="res://image/selectionbox.png" id="1_cm1re"]
 [ext_resource type="Script" uid="uid://dxcsmnywfolfe" path="res://scripts/test_unit.gd" id="1_h12qa"]
 [ext_resource type="PackedScene" uid="uid://wm2vna1u0sk2" path="res://assets/mixamo_base.glb" id="2_ic0df"]
+[ext_resource type="Script" uid="uid://dqgurolp71haj" path="res://scripts/resource_gatherer.gd" id="4_c6cqp"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_v7qkx"]
 
@@ -3236,3 +3237,8 @@ texture = ExtResource("1_cm1re")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_o6j3i")
+
+[node name="ResourceGatherer" type="Node" parent="." node_paths=PackedStringArray("unit_movement", "animator")]
+script = ExtResource("4_c6cqp")
+unit_movement = NodePath("..")
+animator = NodePath("..")

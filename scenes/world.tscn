@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://hq0vuwrwygpv" path="res://scripts/world.gd" id="1_nnsk1"]
 
-[node name="World" type="Node"]
+[node name="World2" type="Node"]
 script = ExtResource("1_nnsk1")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]

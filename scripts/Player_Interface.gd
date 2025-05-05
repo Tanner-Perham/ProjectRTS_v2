@@ -60,6 +60,10 @@ func unit_entered(unit: Node3D) -> void:
 	"""
 	Handler function for registering a unit to the available units dictionary.
 	"""
+	# Skip if this is not an actual unit (like a resource node)
+	if not "player_owner" in unit.get_parent():
+		return
+		
 	var unit_id: int = unit.get_instance_id()
 	if available_units.has(unit_id):
 		return

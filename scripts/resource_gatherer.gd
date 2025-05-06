@@ -46,22 +46,40 @@ func _ready():
 	elif unit_base and "player_owner" in unit_base:
 		player_id = int(unit_base.player_owner)
 
+	# Connect to the unit's movement signals to detect player commands
+	if unit_base:
+		# Use deferred connection to avoid issues during gathering
+		unit_base.connect("movement_commanded", _on_movement_commanded)
+
 # Process function for gathering resources
 func _process(delta: float):
 	if not gathering_active or not current_resource_node:
 		return
+	
+	# Check if the unit has been commanded to move away (pathing is active but not to our gather point)
+	if unit_base and unit_base.movement_controller.pathing:
+		var target_pos = unit_base.movement_controller.get_current_target_position()
+		if target_pos.distance_squared_to(gather_point) > 1.0:
+			print("[ResourceGatherer] Unit is pathing away from resource, stopping gathering")
+			stop_gathering()
+			return
 	
 	# Check if we're close enough to the resource to gather
 	var distance_to_resource = unit_base.global_transform.origin.distance_to(gather_point)
 	if distance_to_resource > gather_radius:
 		# If we're too far, move to the gather point
 		if unit_base:
+			# Make sure we're not still in the kick animation
+			if unit_base.animation_controller and unit_base.animation_controller.current_animation == "kick":
+				unit_base.animation_controller.play_animation("walking")
 			unit_base.move_to(gather_point)
 		return
 	
 	# If we were moving, stop
 	if unit_base and unit_base.movement_controller.pathing:
 		unit_base.movement_controller.pathing = false
+		# Make unit face the resource center when gathering
+		_face_resource_center()
 	
 	# Increment gather timer
 	gather_timer += delta
@@ -130,6 +148,9 @@ func start_gathering(resource_node: ResourceNode) -> bool:
 	gather_point = resource_node.get_nearest_gather_point(unit_base.global_transform.origin)
 	print(gather_point)
 	
+	# Make unit face the resource center when gathering
+	_face_resource_center()
+	
 	# Activate gathering
 	gathering_active = true
 	gather_timer = 0.0
@@ -158,7 +179,11 @@ func stop_gathering() -> void:
 	
 	# Stop gathering animation
 	if unit_base and unit_base.animation_controller:
-		unit_base.animation_controller.play_animation("idle")
+		# Ensure we're returning to idle/walking animation based on movement state
+		if unit_base.movement_controller.pathing:
+			unit_base.animation_controller.force_animation_change("walking")
+		else:
+			unit_base.animation_controller.force_animation_change("idle")
 	
 	# Sync state to clients if we're the server
 	if unit_base.multiplayer.has_multiplayer_peer() and unit_base.is_multiplayer_authority():
@@ -174,6 +199,10 @@ func return_to_drop_off() -> void:
 	
 	# Temporarily stop gathering
 	gathering_active = false
+	
+	# Stop the kick animation before moving
+	if unit_base and unit_base.animation_controller:
+		unit_base.animation_controller.force_animation_change("walking")
 	
 	# Find the nearest drop-off point
 	var drop_off_point = find_nearest_drop_off()
@@ -341,3 +370,30 @@ func server_start_gathering(resource_node_path: NodePath) -> void:
 	var node = get_node(resource_node_path)
 	if node and node is ResourceNode:
 		start_gathering(node)
+
+# Stop gathering when the unit is commanded to move elsewhere
+func _on_movement_commanded(target_position: Vector3) -> void:
+	# Check if we're actively gathering and the target isn't the gather point
+	if gathering_active and current_resource_node and target_position.distance_squared_to(gather_point) > 1.0:
+		print("[ResourceGatherer] Unit was ordered to move away from resource. Stopping gathering.")
+		stop_gathering()
+		
+		# Ensure animation state is updated immediately
+		if unit_base and unit_base.animation_controller:
+			unit_base.animation_controller.force_animation_change("walking")
+			
+		# Force the unit to continue with its commanded movement
+		unit_base.movement_controller.ensure_pathing_active()
+
+# Make the unit face the center of the resource it's gathering from
+func _face_resource_center() -> void:
+	if unit_base and current_resource_node:
+		# Get direction vector from unit to resource center
+		var direction = current_resource_node.global_transform.origin - unit_base.global_transform.origin
+		direction.y = 0  # Ignore height difference for rotation
+		
+		# Only modify rotation if we have a valid direction
+		if direction.length_squared() > 0.01:
+			# Calculate the rotation to face that direction
+			unit_base.rotation.y = atan2(-direction.x, -direction.z)
+			print("[ResourceGatherer] Unit is now facing the resource center")

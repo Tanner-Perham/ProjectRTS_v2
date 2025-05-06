@@ -13,6 +13,9 @@ extends Node3D
 @onready var movement_controller = $MovementController
 @onready var animation_controller = $AnimationController
 
+# Signals
+signal movement_commanded(target_position)
+
 # OWNERSHIP
 @export var player_owner: String:
 	set(new_value):
@@ -146,10 +149,14 @@ func update_client_pathing(is_pathing: bool) -> void:
 # INTERFACE FUNCTIONS
 func move_to(target_position: Vector3) -> void:
 	movement_controller.unit_path_new(target_position)
+	# Emit signal that a movement was commanded
+	emit_signal("movement_commanded", target_position)
 
 # Compatibility function for existing code
 func unit_path_new(goal_position: Vector3) -> void:
 	movement_controller.unit_path_new(goal_position)
+	# Emit signal that a movement was commanded
+	emit_signal("movement_commanded", goal_position)
 
 # Called when synchronizer sends a delta update
 func _on_delta_synchronized() -> void:

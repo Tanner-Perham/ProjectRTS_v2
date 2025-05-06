@@ -368,14 +368,77 @@ func _on_spawn_unit_pressed() -> void:
 func command_units_to_gather(resource_node: ResourceNode) -> void:
 	print("[Player_Interface] Commanding units to gather from: " + resource_node.name)
 	
-	# Loop through all selected units
+	# Get all units with gatherers
+	var gatherer_units = []
+	var non_gatherer_units = []
+	
 	for unit in selected_units.values():
-		# Check if the unit has a ResourceGatherer component
 		var gatherer = unit.find_child("ResourceGatherer", true)
 		if gatherer:
+			gatherer_units.append(unit)
+		else:
+			non_gatherer_units.append(unit)
+	
+	print("[Player_Interface] Found " + str(gatherer_units.size()) + " units that can gather resources")
+	
+	# Check if there are too many units for this resource
+	var available_points = resource_node.get_available_gather_points()
+	print("[Player_Interface] Resource has " + str(available_points) + " available gathering points")
+	
+	# If we need more resources, find alternatives of the same type
+	if gatherer_units.size() > available_points:
+		# Find all resources of the same type in the scene
+		var alternative_resources = []
+		var all_resources = get_tree().get_nodes_in_group("resources")
+		
+		for res in all_resources:
+			if res != resource_node and res is ResourceNode and res.is_same_type_as(resource_node):
+				alternative_resources.append(res)
+		
+		print("[Player_Interface] Found " + str(alternative_resources.size()) + " alternative resources of the same type")
+		
+		# Assign units to the primary resource up to its capacity
+		for i in range(min(available_points, gatherer_units.size())):
+			var gatherer = gatherer_units[i].find_child("ResourceGatherer", true)
+			print("[Player_Interface] Sending unit " + gatherer_units[i].name + " to primary resource")
+			gatherer.start_gathering(resource_node)
+		
+		# Assign remaining units to alternative resources based on proximity
+		if alternative_resources.size() > 0:
+			for i in range(available_points, gatherer_units.size()):
+				var unit = gatherer_units[i]
+				var gatherer = unit.find_child("ResourceGatherer", true)
+				
+				# Find the closest alternative resource with available points
+				var closest_resource = null
+				var closest_distance = INF
+				
+				for res in alternative_resources:
+					if res.get_available_gather_points() > 0:
+						var distance = unit.global_transform.origin.distance_to(res.global_transform.origin)
+						if distance < closest_distance:
+							closest_distance = distance
+							closest_resource = res
+				
+				if closest_resource:
+					print("[Player_Interface] Sending unit " + unit.name + " to alternative resource: " + closest_resource.name)
+					gatherer.start_gathering(closest_resource)
+				else:
+					print("[Player_Interface] No alternative resource available, moving unit to primary resource")
+					unit.move_to(resource_node.global_transform.origin)
+		else:
+			# If no alternatives, just move remaining units to the resource
+			for i in range(available_points, gatherer_units.size()):
+				print("[Player_Interface] No alternative resources, moving unit to primary resource")
+				gatherer_units[i].move_to(resource_node.global_transform.origin)
+	else:
+		# We have enough gathering points for all units
+		for unit in gatherer_units:
+			var gatherer = unit.find_child("ResourceGatherer", true)
 			print("[Player_Interface] Unit " + unit.name + " will gather from " + resource_node.name)
 			gatherer.start_gathering(resource_node)
-		else:
-			# If the unit can't gather, just move to the resource
-			print("[Player_Interface] Unit " + unit.name + " can't gather, moving to resource")
-			unit.move_to(resource_node.global_transform.origin)
+	
+	# Non-gatherer units just move to the resource
+	for unit in non_gatherer_units:
+		print("[Player_Interface] Unit " + unit.name + " can't gather, moving to resource")
+		unit.move_to(resource_node.global_transform.origin)

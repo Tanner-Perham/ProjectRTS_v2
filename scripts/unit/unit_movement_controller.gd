@@ -11,6 +11,7 @@ var pathing: bool = false:
 
 var pathing_point: int = 0
 var path_points_packed: PackedVector3Array
+var current_target_position: Vector3 = Vector3.ZERO
 
 func _ready() -> void:
 	await(get_tree().process_frame)
@@ -23,11 +24,23 @@ func unit_path_new(goal_position: Vector3) -> void:
 	if multiplayer.has_multiplayer_peer() and not parent.is_multiplayer_authority():
 		parent.rpc_id(1, "server_unit_path_new", goal_position)
 		return
+	
+	# Store current target position	
+	current_target_position = goal_position
 		
 	var safe_goal: Vector3 = NavigationServer3D.map_get_closest_point(map_RID, goal_position)
 	path_points_packed = NavigationServer3D.map_get_path(map_RID, parent.global_position, safe_goal, true)
 	pathing = true
 	pathing_point = 0
+
+# Get the current target position the unit is moving to
+func get_current_target_position() -> Vector3:
+	return current_target_position
+
+# Ensure pathing is active if there's a valid path
+func ensure_pathing_active() -> void:
+	if not pathing and not path_points_packed.is_empty():
+		pathing = true
 
 func _physics_process(delta: float) -> void:
 	# Only process movement on the authority (server)

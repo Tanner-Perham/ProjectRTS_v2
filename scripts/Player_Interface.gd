@@ -102,13 +102,20 @@ func _input(event: InputEvent) -> void:
 				if !selected_units.is_empty():
 					mouse_right_click_position = get_global_mouse_position()
 					var camera_raycast_coordinates:Vector3 = player_camera.get_vector3_from_camera_raycast(mouse_right_click_position)
-					# print(camera_raycast_coordinates)
-					if camera_raycast_coordinates != Vector3.ZERO:
+					
+					# Check what we're clicking on
+					var clicked_object = player_camera.get_object_from_camera_raycast(mouse_right_click_position)
+					
+					# If we clicked on a resource node, try to gather from it
+					if clicked_object is ResourceNode:
+						print("[Player_Interface] Right-clicked on resource node: " + clicked_object.name)
+						command_units_to_gather(clicked_object)
+					# Otherwise just move to the position
+					elif camera_raycast_coordinates != Vector3.ZERO:
 						var goal2D: Vector2 = Vector2(
 							camera_raycast_coordinates.x,
 							camera_raycast_coordinates.z
 						)
-
 						selection_move_as_formation(goal2D)
 
 			if Input.is_action_just_pressed('mouse_leftclick'):
@@ -356,3 +363,19 @@ func _on_spawn_unit_pressed() -> void:
 		print("Requested unit spawn at: ", spawn_position_3D)
 	else:
 		print("ERROR: World node not found. Cannot spawn unit.")
+
+# Command selected units to gather from a resource node
+func command_units_to_gather(resource_node: ResourceNode) -> void:
+	print("[Player_Interface] Commanding units to gather from: " + resource_node.name)
+	
+	# Loop through all selected units
+	for unit in selected_units.values():
+		# Check if the unit has a ResourceGatherer component
+		var gatherer = unit.find_child("ResourceGatherer", true)
+		if gatherer:
+			print("[Player_Interface] Unit " + unit.name + " will gather from " + resource_node.name)
+			gatherer.start_gathering(resource_node)
+		else:
+			# If the unit can't gather, just move to the resource
+			print("[Player_Interface] Unit " + unit.name + " can't gather, moving to resource")
+			unit.move_to(resource_node.global_transform.origin)

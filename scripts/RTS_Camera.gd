@@ -105,3 +105,26 @@ func get_vector3_from_camera_raycast(camera_2D_coordinates:Vector2) -> Vector3:
 		return result.position
 	else:
 		return Vector3.ZERO
+
+# Get the actual object hit by a raycast from the camera
+func get_object_from_camera_raycast(camera_2D_coordinates:Vector2) -> Object:
+	var ray_from:Vector3 = camera.project_ray_origin(camera_2D_coordinates)
+	var ray_to:Vector3 = ray_from + camera.project_ray_normal(camera_2D_coordinates) * 1000.0
+	var ray_parameters:PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_from, ray_to)
+
+	var result:Dictionary = camera.get_world_3d().get_direct_space_state().intersect_ray(ray_parameters)
+	
+	if result and result.has("collider"):
+		var collider = result.collider
+		
+		# If the collider is a RigidBody that belongs to a resource node, get the parent
+		if collider is RigidBody3D:
+			var parent = collider.get_parent()
+			if parent is ResourceNode:
+				print("[RTS_Camera] Raycast hit resource node: " + parent.name)
+				return parent
+		
+		# Return whatever we hit
+		return collider
+	
+	return null

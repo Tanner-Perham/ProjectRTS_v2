@@ -128,10 +128,12 @@ func start_gathering(resource_node: ResourceNode) -> bool:
 	
 	# Check if the node is valid
 	if not is_instance_valid(resource_node):
+		print("[ResourceGatherer] Invalid resource node")
 		return false
 	
 	# Try to start gathering from the node
 	if not resource_node.start_gathering(get_instance_id()):
+		print("[ResourceGatherer] Unable to start gathering - resource might be full")
 		return false
 	
 	# If we were already gathering from another node, stop that first
@@ -146,7 +148,6 @@ func start_gathering(resource_node: ResourceNode) -> bool:
 	
 	# Get a gather point near the resource
 	gather_point = resource_node.get_nearest_gather_point(unit_base.global_transform.origin)
-	print(gather_point)
 	
 	# Make unit face the resource center when gathering
 	_face_resource_center()

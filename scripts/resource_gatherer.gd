@@ -34,11 +34,23 @@ func _ready():
 	print("ResourceGatherer initialized for unit: ", unit_base.name)
 	
 	# Find resource system in the scene
-	resource_system = get_node("/root/Main/ResourceSystem")
+	resource_system = get_node_or_null("/root/Main/ResourceSystem")
 	
 	# If we couldn't find it in the expected path, look for it as a singleton
 	if not resource_system:
-		resource_system = get_node("/root/ResourceSystem")
+		resource_system = get_node_or_null("/root/ResourceSystem")
+		
+	# Try to find it anywhere in the scene
+	if not resource_system:
+		var resources = get_tree().get_nodes_in_group("resource_system")
+		if resources.size() > 0:
+			resource_system = resources[0]
+			
+	# Log resource system status
+	if resource_system:
+		print("[ResourceGatherer] Successfully connected to ResourceSystem")
+	else:
+		push_error("[ResourceGatherer] ERROR: Could not find ResourceSystem node!")
 	
 	# Get player ID from parent unit if available
 	if unit_base and unit_base.has_method("get_player_id"):
@@ -217,8 +229,17 @@ func return_to_drop_off() -> void:
 	
 	print("[ResourceGatherer] Found drop-off point: " + drop_off_point.name)
 	
-	# Get the drop-off position
-	var drop_off_position = drop_off_point.global_transform.origin
+	# Get the drop-off position - look for ResourceDropOff component first
+	var drop_off_position: Vector3
+	var resource_drop_off = drop_off_point.find_child("ResourceDropOff", true)
+	
+	if resource_drop_off and resource_drop_off is ResourceDropOff:
+		drop_off_position = resource_drop_off.get_drop_off_position()
+		print("[ResourceGatherer] Using position from ResourceDropOff component")
+	else:
+		# Fallback to building position
+		drop_off_position = drop_off_point.global_transform.origin
+		print("[ResourceGatherer] Using building position as drop-off point")
 	
 	# Move to the drop-off point
 	if unit_base:
@@ -250,53 +271,90 @@ func find_nearest_drop_off():
 	# For simplicity, we'll assume there's a global method to find it
 	
 	# First check for a resource camp that accepts our resource type
-	var nearest_camp = null
+	var nearest_drop_off = null
 	var nearest_distance = INF
 	
-	# Look for resource camps or the main base
-	var buildings = get_tree().get_nodes_in_group("buildings")
+	# Look for resource drop-off points
+	var drop_off_points = get_tree().get_nodes_in_group("resource_drop_offs")
 	
-	for building in buildings:
-		# Check if this building belongs to our player
-		if building.has_method("get_player_id") and building.get_player_id() != player_id:
-			continue
-		
-		# Check if this building is a drop-off point for our resource
-		var is_drop_off = false
-		
-		if building.has_method("is_resource_drop_off"):
-			is_drop_off = building.is_resource_drop_off(current_resource_type)
-		elif building.has_method("get_building_type"):
-			# Main base can accept all resources
-			if building.get_building_type() == "MainBase":
-				is_drop_off = true
-			# Resource camps only accept specific resources
-			elif building.get_building_type() == "ResourceCamp":
-				if building.has_method("get_resource_type"):
-					is_drop_off = building.get_resource_type() == current_resource_type
-		
-		if not is_drop_off:
-			continue
-		
-		# Calculate distance
-		var distance = unit_base.global_transform.origin.distance_to(building.global_transform.origin)
-		
-		if distance < nearest_distance:
-			nearest_distance = distance
-			nearest_camp = building
+	print("[ResourceGatherer] Found " + str(drop_off_points.size()) + " resource drop-off points")
 	
-	return nearest_camp
+	for drop_off in drop_off_points:
+		if drop_off is ResourceDropOff:
+			# Check if this drop-off accepts our resource type
+			if drop_off.accepts_resource_type(current_resource_type):
+				# Check if this drop-off belongs to our player
+				if drop_off.get_player_id() == player_id:
+					# Calculate distance
+					var distance = unit_base.global_transform.origin.distance_to(drop_off.global_position)
+					
+					if distance < nearest_distance:
+						nearest_distance = distance
+						nearest_drop_off = drop_off.get_parent()  # Return the building, not the drop-off component
+						print("[ResourceGatherer] Found suitable drop-off: " + nearest_drop_off.name)
+	
+	# Fallback to old method if no drop-offs found
+	if nearest_drop_off == null:
+		print("[ResourceGatherer] No drop-off points found in resource_drop_offs group, falling back to old method")
+		
+		# Look for resource camps or the main base
+		var buildings = get_tree().get_nodes_in_group("buildings")
+		
+		for building in buildings:
+			# Check if this building belongs to our player
+			if building.has_method("get_player_id") and building.get_player_id() != player_id:
+				continue
+			
+			# Check if this building is a drop-off point for our resource
+			var is_drop_off = false
+			
+			if building.has_method("is_resource_drop_off"):
+				is_drop_off = building.is_resource_drop_off(current_resource_type)
+			elif building.has_method("get_building_type"):
+				# Main base can accept all resources
+				if building.get_building_type() == "MainBase":
+					is_drop_off = true
+				# Resource camps only accept specific resources
+				elif building.get_building_type() == "ResourceCamp":
+					if building.has_method("get_resource_type"):
+						is_drop_off = building.get_resource_type() == current_resource_type
+			
+			if not is_drop_off:
+				continue
+			
+			# Calculate distance
+			var distance = unit_base.global_transform.origin.distance_to(building.global_transform.origin)
+			
+			if distance < nearest_distance:
+				nearest_distance = distance
+				nearest_drop_off = building
+	
+	return nearest_drop_off
 
 # Deposit gathered resources at a drop-off point
 func deposit_resources() -> void:
 	if current_gathered_amount <= 0 or current_resource_type == "":
+		print("[ResourceGatherer] Nothing to deposit!")
 		return
 	
 	print("[ResourceGatherer] Depositing " + str(current_gathered_amount) + " " + current_resource_type)
 	
 	# Add resources to the player's stockpile
 	if resource_system:
+		var before_amount = 0
+		if resource_system.player_resources.has(player_id) and resource_system.player_resources[player_id].has(current_resource_type):
+			before_amount = resource_system.player_resources[player_id][current_resource_type]
+		
 		resource_system.add_resources(player_id, current_resource_type, current_gathered_amount)
+		
+		var after_amount = 0
+		if resource_system.player_resources.has(player_id) and resource_system.player_resources[player_id].has(current_resource_type):
+			after_amount = resource_system.player_resources[player_id][current_resource_type]
+		
+		print("[ResourceGatherer] Player " + str(player_id) + " resources updated: " + current_resource_type + 
+			" " + str(before_amount) + " -> " + str(after_amount) + " (+" + str(current_gathered_amount) + ")")
+	else:
+		push_error("[ResourceGatherer] ERROR: Cannot deposit resources - ResourceSystem not found!")
 	
 	# Reset carried amount
 	current_gathered_amount = 0

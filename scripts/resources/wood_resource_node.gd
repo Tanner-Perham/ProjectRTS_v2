@@ -104,5 +104,5 @@ func _on_depleted() -> void:
 	super._on_depleted()
 	
 	# If regrowth is not enabled, make sure collision is disabled for fully depleted trees
-	if not regrowth_enabled:
+	if not regrowth_enabled and collision_shape != null:
 		collision_shape.disabled = true

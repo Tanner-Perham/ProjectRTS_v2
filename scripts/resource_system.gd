@@ -16,6 +16,12 @@ var player_resources = {}
 # Signal emitted when a player's resources change
 signal resources_changed(player_id, resource_type, amount)
 
+# Called when the node enters the scene tree
+func _ready():
+	# Add this node to the resource_system group for easy discovery by other nodes
+	add_to_group("resource_system")
+	print("[ResourceSystem] Initialized and added to resource_system group")
+
 # Initialize resources for a player
 func initialize_player_resources(player_id: int) -> void:
 	player_resources[player_id] = {
@@ -23,6 +29,8 @@ func initialize_player_resources(player_id: int) -> void:
 		"Minerals": 100, # Starting minerals
 		"Stone": 50      # Starting stone
 	}
+	
+	print("[ResourceSystem] Initialized resources for player " + str(player_id))
 	
 	# Emit signals for initial resources
 	for resource_type in player_resources[player_id]:
@@ -32,15 +40,19 @@ func initialize_player_resources(player_id: int) -> void:
 func add_resources(player_id: int, resource_type: String, amount: int) -> void:
 	# Check if player exists in the system
 	if not player_resources.has(player_id):
+		print("[ResourceSystem] Player " + str(player_id) + " not found, initializing...")
 		initialize_player_resources(player_id)
 	
 	# Check if resource type is valid
 	if not player_resources[player_id].has(resource_type):
-		push_error("Invalid resource type: " + resource_type)
+		push_error("[ResourceSystem] Invalid resource type: " + resource_type)
 		return
 	
 	# Add resources
 	player_resources[player_id][resource_type] += amount
+	
+	print("[ResourceSystem] Added " + str(amount) + " " + resource_type + " to player " + str(player_id) + 
+		", new total: " + str(player_resources[player_id][resource_type]))
 	
 	# Emit signal
 	emit_signal("resources_changed", player_id, resource_type, player_resources[player_id][resource_type])

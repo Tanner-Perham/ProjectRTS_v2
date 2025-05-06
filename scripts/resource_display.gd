@@ -27,10 +27,34 @@ func _ready():
 	if not stone_label:
 		stone_label = find_child("StoneAmount")
 	
-	# Initialize with zero values
-	update_resource_display(player_id, "Wood", 100)
-	update_resource_display(player_id, "Minerals", 0)
-	update_resource_display(player_id, "Stone", 0)
+	# Find the resource system and connect to its signal
+	var resource_system = get_node_or_null("/root/Main/ResourceSystem")
+	
+	# If we couldn't find it in the expected path, try other locations
+	if not resource_system:
+		resource_system = get_node_or_null("/root/ResourceSystem")
+	
+	# Try to find it in the resource_system group
+	if not resource_system:
+		var resources = get_tree().get_nodes_in_group("resource_system")
+		if resources.size() > 0:
+			resource_system = resources[0]
+	
+	if resource_system:
+		print("[ResourceDisplay] Connected to ResourceSystem")
+		# Connect to the resources_changed signal
+		resource_system.connect("resources_changed", _on_resources_changed)
+		
+		# Initialize with current values
+		update_resource_display(player_id, "Wood", resource_system.get_resource_amount(player_id, "Wood"))
+		update_resource_display(player_id, "Minerals", resource_system.get_resource_amount(player_id, "Minerals"))
+		update_resource_display(player_id, "Stone", resource_system.get_resource_amount(player_id, "Stone"))
+	else:
+		print("[ResourceDisplay] WARNING: Could not find ResourceSystem")
+		# Initialize with zero values
+		update_resource_display(player_id, "Wood", 100)
+		update_resource_display(player_id, "Minerals", 0)
+		update_resource_display(player_id, "Stone", 0)
 
 # Update a specific resource display
 func update_resource_display(p_id: int, resource_type: String, amount: int) -> void:
@@ -55,8 +79,26 @@ func set_player_id(p_id: int) -> void:
 	player_id = p_id
 	
 	# Force refresh all displays
-	var resource_system = get_node("/root/ResourceSystem")
+	var resource_system = get_node_or_null("/root/Main/ResourceSystem")
+	
+	# If we couldn't find it in the expected path, try other locations
+	if not resource_system:
+		resource_system = get_node_or_null("/root/ResourceSystem")
+	
+	# Try to find it in the resource_system group
+	if not resource_system:
+		var resources = get_tree().get_nodes_in_group("resource_system")
+		if resources.size() > 0:
+			resource_system = resources[0]
+	
 	if resource_system:
 		update_resource_display(player_id, "Wood", resource_system.get_resource_amount(player_id, "Wood"))
 		update_resource_display(player_id, "Minerals", resource_system.get_resource_amount(player_id, "Minerals"))
 		update_resource_display(player_id, "Stone", resource_system.get_resource_amount(player_id, "Stone"))
+	else:
+		print("[ResourceDisplay] WARNING: Could not find ResourceSystem when setting player ID")
+
+# Callback for when resources change
+func _on_resources_changed(p_id: int, resource_type: String, amount: int) -> void:
+	# Update the display for the changed resource
+	update_resource_display(p_id, resource_type, amount)

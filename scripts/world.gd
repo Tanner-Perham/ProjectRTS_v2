@@ -9,7 +9,7 @@ extends Node
 @onready var network_status_info = $DebugInfo/PanelContainer/HBoxContainer/NetworkStatus
 
 const Player = preload("res://scenes/Player.tscn")
-const TestUnit = preload("res://scenes/test_unit.tscn")
+const TestUnit = preload("res://scenes/units/worker_unit.tscn")
 var PORT = 9999
 const MAX_CLIENTS = 4
 var enet_peer = ENetMultiplayerPeer.new()
@@ -19,7 +19,7 @@ func _ready():
 	# Configure the MultiplayerSpawner to include both Player and TestUnit scenes
 	if multiplayer_spawner:
 		# Set spawnable scenes properly - directly assign to the property
-		var scenes_to_spawn = PackedStringArray(["res://scenes/Player.tscn", "res://scenes/test_unit.tscn"])
+		var scenes_to_spawn = PackedStringArray(["res://scenes/Player.tscn", "res://scenes/units/worker_unit.tscn"])
 		multiplayer_spawner._spawnable_scenes = scenes_to_spawn
 		print("Multiplayer spawner configured with scenes: ", scenes_to_spawn)
 

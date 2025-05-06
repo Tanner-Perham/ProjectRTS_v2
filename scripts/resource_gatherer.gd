@@ -10,8 +10,8 @@ extends Node
 @export var gather_radius: float = 1.5 # How close the unit needs to be to gather
 
 # References to other components
-@export var unit_movement: Node3D # Reference to the unit's movement component
-@export var animator: Node3D # Reference to the unit's animator
+@export var unit_movement: Node # Reference to the unit's movement component
+@export var animator: Node # Reference to the unit's animator
 
 # Current state
 var current_resource_node: ResourceNode = null

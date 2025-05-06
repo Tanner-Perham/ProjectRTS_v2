@@ -3240,10 +3240,8 @@ texture = ExtResource("3_sb37y")
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_o6j3i")
 
-[node name="ResourceGatherer" type="Node" parent="." node_paths=PackedStringArray("unit_movement", "animator")]
+[node name="ResourceGatherer" type="Node" parent="."]
 script = ExtResource("4_4wibf")
-unit_movement = NodePath("../MovementController")
-animator = NodePath("../AnimationController")
 
 [node name="MovementController" type="Node" parent="."]
 script = ExtResource("5_fdpw5")

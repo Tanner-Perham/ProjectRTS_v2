@@ -1,5 +1,6 @@
-[gd_scene load_steps=5 format=4 uid="uid://d2sk5kc0b46d7"]
+[gd_scene load_steps=7 format=4 uid="uid://d2sk5kc0b46d7"]
 
+[ext_resource type="Script" uid="uid://bxc0ofsaf4ccx" path="res://scripts/buildings/building.gd" id="1_exp6l"]
 [ext_resource type="Script" uid="uid://b68tfoxw3eb8n" path="res://scripts/resource_drop_off.gd" id="1_p8o4b"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qhgok"]
@@ -42,7 +43,11 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_071km")
 
-[node name="BaseBuilding" type="Node3D" groups=["Environment", "building"]]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_exp6l"]
+
+[node name="BaseBuilding" type="Node3D" node_paths=PackedStringArray("multiplayer_synchronizer") groups=["Environment", "building"]]
+script = ExtResource("1_exp6l")
+multiplayer_synchronizer = NodePath("MultiplayerSynchronizer")
 
 [node name="Model" type="MeshInstance3D" parent="."]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 5, 0)
@@ -54,3 +59,6 @@ root_node = NodePath("")
 
 [node name="ResourceDropOff" type="Node3D" parent="."]
 script = ExtResource("1_p8o4b")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_exp6l")

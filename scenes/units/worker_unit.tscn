@@ -3242,6 +3242,7 @@ replication_config = SubResource("SceneReplicationConfig_o6j3i")
 
 [node name="ResourceGatherer" type="Node" parent="."]
 script = ExtResource("4_4wibf")
+gather_radius = 1.0
 
 [node name="MovementController" type="Node" parent="."]
 script = ExtResource("5_fdpw5")

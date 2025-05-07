@@ -68,9 +68,12 @@ func _process(delta: float):
 	if not gathering_active or not current_resource_node:
 		return
 	
+	print("[ResourceGatherer DEBUG] Process running, gathering_active=" + str(gathering_active) + ", node=" + current_resource_node.name)
+	
 	# Check if the unit has been commanded to move away (pathing is active but not to our gather point)
 	if unit_base and unit_base.movement_controller.pathing:
 		var target_pos = unit_base.movement_controller.get_current_target_position()
+		print("[ResourceGatherer DEBUG] Unit is pathing, target=" + str(target_pos) + ", gather_point=" + str(gather_point))
 		if target_pos.distance_squared_to(gather_point) > 1.0:
 			print("[ResourceGatherer] Unit is pathing away from resource, stopping gathering")
 			stop_gathering()
@@ -78,63 +81,80 @@ func _process(delta: float):
 	
 	# Check if we're close enough to the resource to gather
 	var distance_to_resource = unit_base.global_transform.origin.distance_to(gather_point)
+	print("[ResourceGatherer DEBUG] Distance to resource: " + str(distance_to_resource) + ", gather_radius=" + str(gather_radius))
 	if distance_to_resource > gather_radius:
 		# If we're too far, move to the gather point
 		if unit_base:
 			# Make sure we're not still in the kick animation
 			if unit_base.animation_controller and unit_base.animation_controller.current_animation == "kick":
 				unit_base.animation_controller.play_animation("walking")
+			print("[ResourceGatherer DEBUG] Too far from resource, moving to gather point")
 			unit_base.move_to(gather_point)
 		return
 	
 	# If we were moving, stop
 	if unit_base and unit_base.movement_controller.pathing:
+		print("[ResourceGatherer DEBUG] Stopping pathing to gather")
 		unit_base.movement_controller.pathing = false
 		# Make unit face the resource center when gathering
 		_face_resource_center()
 	
-	# Increment gather timer
-	gather_timer += delta
+	print("[ResourceGatherer DEBUG] Is multiplayer authority: " + str(unit_base.is_multiplayer_authority()))
 	
-	# Play gathering animation if available
-	if unit_base and unit_base.animation_controller:
-		# Play kick animation when gathering resources
-		unit_base.animation_controller.play_animation("kick")
-	
-	# Check if a gather cycle is complete
-	if gather_timer >= gather_cycle_time:
-		gather_timer = 0.0
+	# Only server processes actual resource gathering logic
+	if unit_base.is_multiplayer_authority():
+		# Increment gather timer
+		gather_timer += delta
 		
-		# Calculate how much to gather in this cycle
-		var to_gather = min(base_gather_rate, carrying_capacity - current_gathered_amount)
+		print("[ResourceGatherer DEBUG] Gather timer: " + str(gather_timer) + "/" + str(gather_cycle_time))
 		
-		# If we're full, return to drop-off
-		if to_gather <= 0:
-			print("[ResourceGatherer] Unit is full. Returning to drop-off with " + str(current_gathered_amount) + " " + current_resource_type)
-			return_to_drop_off()
-			return
+		# Play gathering animation if available
+		if unit_base and unit_base.animation_controller:
+			# Play kick animation when gathering resources
+			print("[ResourceGatherer DEBUG] Playing kick animation on server")
+			unit_base.animation_controller.play_animation("kick")
 		
-		# Actually gather resources from the node
-		var gathered = current_resource_node.gather_resources(to_gather)
-		
-		print("[ResourceGatherer] Gathered " + str(gathered) + " " + current_resource_type + ". Total: " + str(current_gathered_amount + gathered))
-		
-		# Update our carried amount
-		current_gathered_amount += gathered
-		
-		# Sync the gathered amount over multiplayer
-		if unit_base.is_multiplayer_authority():
+		# Check if a gather cycle is complete
+		if gather_timer >= gather_cycle_time:
+			print("[ResourceGatherer DEBUG] Gather cycle complete")
+			gather_timer = 0.0
+			
+			# Calculate how much to gather in this cycle
+			var to_gather = min(base_gather_rate, carrying_capacity - current_gathered_amount)
+			
+			# If we're full, return to drop-off
+			if to_gather <= 0:
+				print("[ResourceGatherer] Unit is full. Returning to drop-off with " + str(current_gathered_amount) + " " + current_resource_type)
+				return_to_drop_off()
+				return
+			
+			# Actually gather resources from the node
+			var gathered = current_resource_node.gather_resources(to_gather)
+			
+			print("[ResourceGatherer] Gathered " + str(gathered) + " " + current_resource_type + ". Total: " + str(current_gathered_amount + gathered))
+			
+			# Update our carried amount
+			current_gathered_amount += gathered
+			
+			# Sync the gathered amount over multiplayer
+			print("[ResourceGatherer DEBUG] Sending sync_gathered_amount RPC")
 			rpc("sync_gathered_amount", current_gathered_amount, current_resource_type)
-		
-		# If node is depleted or we're full, return to drop-off
-		if gathered == 0 or current_gathered_amount >= carrying_capacity:
-			return_to_drop_off()
+			
+			# If node is depleted or we're full, return to drop-off
+			if gathered == 0 or current_gathered_amount >= carrying_capacity:
+				return_to_drop_off()
+	else:
+		# For clients, just play the animation
+		if unit_base and unit_base.animation_controller:
+			print("[ResourceGatherer DEBUG] Playing kick animation on client")
+			unit_base.animation_controller.play_animation("kick")
 
 # Start gathering from a resource node
 func start_gathering(resource_node: ResourceNode) -> bool:
 	# Only allow the server or unit owner to start gathering
 	if unit_base.multiplayer.has_multiplayer_peer() and not unit_base.is_multiplayer_authority():
 		print("[ResourceGatherer] Client sending request to server to start gathering")
+		# Use the UnitBase server_start_gathering RPC instead
 		unit_base.rpc_id(1, "server_start_gathering", resource_node.get_path())
 		return true
 	
@@ -160,6 +180,7 @@ func start_gathering(resource_node: ResourceNode) -> bool:
 	
 	# Get a gather point near the resource
 	gather_point = resource_node.get_nearest_gather_point(unit_base.global_transform.origin)
+	print("[ResourceGatherer DEBUG] Selected gather point: " + str(gather_point))
 	
 	# Make unit face the resource center when gathering
 	_face_resource_center()
@@ -170,10 +191,12 @@ func start_gathering(resource_node: ResourceNode) -> bool:
 	
 	# If we're the server, sync this to clients
 	if unit_base.multiplayer.has_multiplayer_peer() and unit_base.is_multiplayer_authority():
+		print("[ResourceGatherer DEBUG] Sending sync_start_gathering RPC to clients")
 		rpc("sync_start_gathering", resource_node.get_path())
 	
 	# Move to the gather point
 	if unit_base:
+		print("[ResourceGatherer DEBUG] Moving to gather point: " + str(gather_point))
 		unit_base.move_to(gather_point)
 	
 	return true
@@ -243,6 +266,7 @@ func return_to_drop_off() -> void:
 	
 	# Move to the drop-off point
 	if unit_base:
+		print("[ResourceGatherer] Moving to drop-off position: " + str(drop_off_position))
 		unit_base.move_to(drop_off_position)
 		
 		# Wait until we reach the drop-off point
@@ -252,6 +276,12 @@ func return_to_drop_off() -> void:
 		
 		while unit_base.movement_controller.pathing:
 			await get_tree().create_timer(0.1).timeout
+			
+			# Check if we're close enough to deposit
+			var distance_to_drop_off = unit_base.global_transform.origin.distance_to(drop_off_position)
+			if distance_to_drop_off <= 2.0:  # Within 2 units of drop-off point
+				print("[ResourceGatherer] Close enough to drop-off point, depositing resources")
+				break
 	
 	# Once at drop-off, deposit resources
 	deposit_resources()
@@ -263,6 +293,7 @@ func return_to_drop_off() -> void:
 		
 		# Move back to the resource
 		if unit_base:
+			print("[ResourceGatherer] Returning to resource node")
 			unit_base.move_to(gather_point)
 
 # Find the nearest drop-off point for the current resource type
@@ -339,22 +370,27 @@ func deposit_resources() -> void:
 	
 	print("[ResourceGatherer] Depositing " + str(current_gathered_amount) + " " + current_resource_type)
 	
-	# Add resources to the player's stockpile
-	if resource_system:
-		var before_amount = 0
-		if resource_system.player_resources.has(player_id) and resource_system.player_resources[player_id].has(current_resource_type):
-			before_amount = resource_system.player_resources[player_id][current_resource_type]
-		
-		resource_system.add_resources(player_id, current_resource_type, current_gathered_amount)
-		
-		var after_amount = 0
-		if resource_system.player_resources.has(player_id) and resource_system.player_resources[player_id].has(current_resource_type):
-			after_amount = resource_system.player_resources[player_id][current_resource_type]
-		
-		print("[ResourceGatherer] Player " + str(player_id) + " resources updated: " + current_resource_type + 
-			" " + str(before_amount) + " -> " + str(after_amount) + " (+" + str(current_gathered_amount) + ")")
-	else:
-		push_error("[ResourceGatherer] ERROR: Cannot deposit resources - ResourceSystem not found!")
+	# Only server should add resources to the player's stockpile
+	if unit_base.is_multiplayer_authority():
+		if resource_system:
+			var before_amount = 0
+			if resource_system.player_resources.has(player_id) and resource_system.player_resources[player_id].has(current_resource_type):
+				before_amount = resource_system.player_resources[player_id][current_resource_type]
+			
+			resource_system.add_resources(player_id, current_resource_type, current_gathered_amount)
+			
+			var after_amount = 0
+			if resource_system.player_resources.has(player_id) and resource_system.player_resources[player_id].has(current_resource_type):
+				after_amount = resource_system.player_resources[player_id][current_resource_type]
+			
+			print("[ResourceGatherer] Player " + str(player_id) + " resources updated: " + current_resource_type + 
+				" " + str(before_amount) + " -> " + str(after_amount) + " (+" + str(current_gathered_amount) + ")")
+			
+			# Make sure we sync this with all clients via resource system
+			if resource_system.multiplayer.has_multiplayer_peer():
+				resource_system.broadcast_resources()
+		else:
+			push_error("[ResourceGatherer] ERROR: Cannot deposit resources - ResourceSystem not found!")
 	
 	# Reset carried amount
 	current_gathered_amount = 0
@@ -368,8 +404,8 @@ func deposit_resources() -> void:
 	if unit_base and unit_base.animation_controller:
 		unit_base.animation_controller.play_animation("idle")
 	
-	# Sync the gathered amount over multiplayer
-	if unit_base.multiplayer.has_multiplayer_peer() and unit_base.is_multiplayer_authority():
+	# Sync the gathered amount over multiplayer (even if we're client, to ensure UI updates)
+	if unit_base.is_multiplayer_authority():
 		rpc("sync_gathered_amount", current_gathered_amount, current_resource_type)
 
 # Get the current carried amount
@@ -389,7 +425,8 @@ func sync_gathered_amount(amount: int, type: String) -> void:
 
 @rpc("authority", "reliable")
 func sync_start_gathering(resource_node_path: NodePath) -> void:
-	var node = get_node(resource_node_path)
+	print("[ResourceGatherer DEBUG] Received sync_start_gathering RPC")
+	var node = get_node_or_null(resource_node_path)
 	if node and node is ResourceNode:
 		print("[ResourceGatherer] Network sync: Start gathering from " + node.name)
 		# Initialize gathering state on the client
@@ -401,7 +438,10 @@ func sync_start_gathering(resource_node_path: NodePath) -> void:
 		
 		# Start the kick animation on clients too
 		if unit_base and unit_base.animation_controller:
+			print("[ResourceGatherer DEBUG] Playing kick animation on client from sync_start_gathering")
 			unit_base.animation_controller.play_animation("kick")
+	else:
+		push_error("[ResourceGatherer ERROR] Could not find resource node at path: " + str(resource_node_path))
 
 @rpc("authority", "reliable")
 func sync_stop_gathering() -> void:
@@ -409,26 +449,6 @@ func sync_stop_gathering() -> void:
 	gathering_active = false
 	current_resource_node = null
 	gather_timer = 0.0
-
-# Server RPC handler for starting gathering (called by client)
-@rpc("any_peer", "call_local")
-func server_start_gathering(resource_node_path: NodePath) -> void:
-	# Only the server should handle this
-	if not unit_base.is_multiplayer_authority():
-		return
-		
-	print("[ResourceGatherer] Server received gathering request from client")
-	
-	# Check that the command is from the unit's owner
-	var sender_id = str(unit_base.multiplayer.get_remote_sender_id())
-	if sender_id != unit_base.player_owner:
-		print("Gathering command rejected: Unit belongs to ", unit_base.player_owner, " but command sent by ", sender_id)
-		return
-	
-	# Get the resource node and start gathering
-	var node = get_node(resource_node_path)
-	if node and node is ResourceNode:
-		start_gathering(node)
 
 # Stop gathering when the unit is commanded to move elsewhere
 func _on_movement_commanded(target_position: Vector3) -> void:

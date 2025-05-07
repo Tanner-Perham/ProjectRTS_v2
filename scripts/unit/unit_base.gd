@@ -120,6 +120,33 @@ func update_player_owner(new_owner: String) -> void:
 	player_owner = new_owner
 
 @rpc("any_peer", "call_local")
+func server_start_gathering(resource_node_path: NodePath) -> void:
+	print("[UnitBase DEBUG] Received server_start_gathering RPC for " + str(resource_node_path))
+	
+	# Only the server should handle this
+	if not is_multiplayer_authority():
+		print("[UnitBase DEBUG] Not authority, ignoring server_start_gathering RPC")
+		return
+	
+	# Check that the command is from the unit's owner
+	var sender_id = str(multiplayer.get_remote_sender_id())
+	if sender_id != player_owner:
+		print("[UnitBase] Gathering command rejected: Unit belongs to ", player_owner, " but command sent by ", sender_id)
+		return
+	
+	# Forward to the resource gatherer component
+	var resource_gatherer = find_child("ResourceGatherer", true)
+	if resource_gatherer:
+		print("[UnitBase DEBUG] Found ResourceGatherer component, forwarding request")
+		var node = get_node_or_null(resource_node_path)
+		if node and node is ResourceNode:
+			resource_gatherer.start_gathering(node)
+		else:
+			push_error("[UnitBase ERROR] Could not find resource node at path: " + str(resource_node_path))
+	else:
+		push_error("[UnitBase ERROR] Unit has no ResourceGatherer component")
+
+@rpc("any_peer", "call_local")
 func server_unit_path_new(goal_position: Vector3) -> void:
 	# Only the server should calculate and update paths
 	if not is_multiplayer_authority():

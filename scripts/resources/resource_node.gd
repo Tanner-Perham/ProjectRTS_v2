@@ -96,8 +96,12 @@ func stop_gathering(gatherer_unit_id: int) -> void:
 # Gather a specified amount of resources
 # Returns the actual amount gathered (may be less if node is nearly depleted)
 func gather_resources(amount: int) -> int:
+	print("[ResourceNode DEBUG] Gathering attempt for " + str(amount) + " " + resource_type + 
+		", current amount: " + str(current_resource_amount))
+	
 	# If no resources left, return 0
 	if current_resource_amount <= 0:
+		print("[ResourceNode DEBUG] No resources left to gather")
 		return 0
 	
 	# Calculate actual amount to gather (limited by what's available)
@@ -105,6 +109,9 @@ func gather_resources(amount: int) -> int:
 	
 	# Reduce the resource amount
 	current_resource_amount -= actual_amount
+	
+	print("[ResourceNode DEBUG] Gathered " + str(actual_amount) + " " + resource_type + 
+		", remaining: " + str(current_resource_amount))
 	
 	# Update the visual state based on remaining resources
 	update_visual_state()

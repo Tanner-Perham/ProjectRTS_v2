@@ -1,9 +1,11 @@
-[gd_scene load_steps=16 format=3 uid="uid://cfad5wy2om38f"]
+[gd_scene load_steps=18 format=3 uid="uid://bjcn6nrg4jh1v"]
 
-[ext_resource type="Texture2D" uid="uid://o4e4wrbs2rrl" path="res://image/selectionbox.png" id="1_cm1re"]
-[ext_resource type="Script" uid="uid://dxcsmnywfolfe" path="res://scripts/unit/test_unit.gd" id="1_h12qa"]
-[ext_resource type="PackedScene" uid="uid://wm2vna1u0sk2" path="res://assets/mixamo_base.glb" id="2_ic0df"]
-[ext_resource type="Script" uid="uid://dqgurolp71haj" path="res://scripts/resource_gatherer.gd" id="4_c6cqp"]
+[ext_resource type="Script" path="res://scripts/unit_base.gd" id="1_idw5y"]
+[ext_resource type="PackedScene" uid="uid://wm2vna1u0sk2" path="res://assets/mixamo_base.glb" id="2_5lcvp"]
+[ext_resource type="Texture2D" uid="uid://o4e4wrbs2rrl" path="res://image/selectionbox.png" id="3_t6s1w"]
+[ext_resource type="Script" uid="uid://dqgurolp71haj" path="res://scripts/resource_gatherer.gd" id="4_cc7cd"]
+[ext_resource type="Script" path="res://scripts/unit_movement_controller.gd" id="5_t6s1w"]
+[ext_resource type="Script" path="res://scripts/unit_animator_controller.gd" id="6_cc7cd"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_v7qkx"]
 
@@ -3199,8 +3201,8 @@ _data = {
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_o6j3i"]
 
-[node name="testunit" type="Node3D"]
-script = ExtResource("1_h12qa")
+[node name="testworkerunit" type="Node3D"]
+script = ExtResource("1_idw5y")
 
 [node name="Test_Unit_01" type="Node3D" parent="."]
 
@@ -3214,7 +3216,7 @@ skeleton = NodePath("../..")
 transform = Transform3D(1, 0, 0, 0, -2.18557e-08, 0.2, 0, -0.5, -8.74228e-09, 0, 0.2, -1)
 mesh = SubResource("PrismMesh_64iok")
 
-[node name="mixamo_base" parent="Test_Unit_01" instance=ExtResource("2_ic0df")]
+[node name="mixamo_base" parent="Test_Unit_01" instance=ExtResource("2_5lcvp")]
 transform = Transform3D(-1.45, 0, -1.26763e-07, 0, 1.45, 0, 1.26763e-07, 0, -1.45, 0, 0, 0)
 
 [node name="AnimationPlayer2" type="AnimationPlayer" parent="Test_Unit_01/mixamo_base"]
@@ -3233,10 +3235,19 @@ shape = SubResource("CapsuleShape3D_jx1po")
 modulate = Color(0.219608, 0.501961, 0.305882, 0.305882)
 pixel_size = 0.2
 axis = 1
-texture = ExtResource("1_cm1re")
+texture = ExtResource("3_t6s1w")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_o6j3i")
 
-[node name="ResourceGatherer" type="Node" parent="."]
-script = ExtResource("4_c6cqp")
+[node name="ResourceGatherer" type="Node" parent="." node_paths=PackedStringArray("unit_movement", "animator")]
+script = ExtResource("4_cc7cd")
+unit_movement = NodePath("..")
+animator = NodePath("..")
+
+[node name="UnitMovementController" type="Node3D" parent="."]
+script = ExtResource("5_t6s1w")
+
+[node name="UnitAnimatorController" type="Node3D" parent="." node_paths=PackedStringArray("animation_player")]
+script = ExtResource("6_cc7cd")
+animation_player = NodePath("../Test_Unit_01/mixamo_base/AnimationPlayer2")

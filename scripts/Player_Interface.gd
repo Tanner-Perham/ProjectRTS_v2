@@ -60,6 +60,10 @@ func unit_entered(unit: Node3D) -> void:
 	"""
 	Handler function for registering a unit to the available units dictionary.
 	"""
+	# Skip if this is not an actual unit (like a resource node)
+	if not "player_owner" in unit.get_parent():
+		return
+		
 	var unit_id: int = unit.get_instance_id()
 	if available_units.has(unit_id):
 		return
@@ -98,13 +102,20 @@ func _input(event: InputEvent) -> void:
 				if !selected_units.is_empty():
 					mouse_right_click_position = get_global_mouse_position()
 					var camera_raycast_coordinates:Vector3 = player_camera.get_vector3_from_camera_raycast(mouse_right_click_position)
-					# print(camera_raycast_coordinates)
-					if camera_raycast_coordinates != Vector3.ZERO:
+					
+					# Check what we're clicking on
+					var clicked_object = player_camera.get_object_from_camera_raycast(mouse_right_click_position)
+					
+					# If we clicked on a resource node, try to gather from it
+					if clicked_object is ResourceNode:
+						print("[Player_Interface] Right-clicked on resource node: " + clicked_object.name)
+						command_units_to_gather(clicked_object)
+					# Otherwise just move to the position
+					elif camera_raycast_coordinates != Vector3.ZERO:
 						var goal2D: Vector2 = Vector2(
 							camera_raycast_coordinates.x,
 							camera_raycast_coordinates.z
 						)
-
 						selection_move_as_formation(goal2D)
 
 			if Input.is_action_just_pressed('mouse_leftclick'):
@@ -352,3 +363,130 @@ func _on_spawn_unit_pressed() -> void:
 		print("Requested unit spawn at: ", spawn_position_3D)
 	else:
 		print("ERROR: World node not found. Cannot spawn unit.")
+
+# Command selected units to gather from a resource node
+func command_units_to_gather(resource_node: ResourceNode) -> void:
+	print("[Player_Interface] Commanding units to gather from: " + resource_node.name)
+	
+	# Get all units with gatherers
+	var gatherer_units = []
+	var non_gatherer_units = []
+	
+	for unit in selected_units.values():
+		var gatherer = unit.find_child("ResourceGatherer", true)
+		if gatherer:
+			gatherer_units.append(unit)
+		else:
+			non_gatherer_units.append(unit)
+	
+	print("[Player_Interface] Found " + str(gatherer_units.size()) + " units that can gather resources")
+	
+	# Create a list of nearby resources of the same type (including the primary one)
+	var all_resources = get_tree().get_nodes_in_group("resources")
+	var available_resources = []
+	
+	# Add the primary resource first
+	available_resources.append({
+		"node": resource_node,
+		"available_points": resource_node.get_available_gather_points()
+	})
+	
+	# Find all alternative resources of the same type
+	for res in all_resources:
+		if res != resource_node and res is ResourceNode and res.is_same_type_as(resource_node):
+			var points = res.get_available_gather_points()
+			if points > 0:  # Only include resources that have available points
+				available_resources.append({
+					"node": res, 
+					"available_points": points
+				})
+	
+	print("[Player_Interface] Found " + str(available_resources.size()) + " resources of type " + resource_node.resource_type)
+	
+	# Sort resources by distance to the first unit (as a reference point)
+	if gatherer_units.size() > 0 and available_resources.size() > 1:
+		var reference_position = gatherer_units[0].global_transform.origin
+		available_resources.sort_custom(func(a, b):
+			var dist_a = a.node.global_transform.origin.distance_to(reference_position)
+			var dist_b = b.node.global_transform.origin.distance_to(reference_position)
+			return dist_a < dist_b
+		)
+	
+	# Distribute units among available resources
+	var total_points = 0
+	for res_data in available_resources:
+		total_points += res_data.available_points
+	
+	print("[Player_Interface] Total available gathering points: " + str(total_points))
+	
+	# If not enough points for all units, some will just move to resources
+	var assigned_units = 0
+	
+	# First pass: assign units to resources with available points
+	for res_data in available_resources:
+		var resource = res_data.node
+		var points = res_data.available_points
+		
+		# Skip if this resource has no points or we've assigned all units
+		if points <= 0 or assigned_units >= gatherer_units.size():
+			continue
+		
+		# Determine how many units to assign to this resource
+		var units_to_assign = min(points, gatherer_units.size() - assigned_units)
+		
+		print("[Player_Interface] Assigning " + str(units_to_assign) + " units to " + resource.name + 
+			" with " + str(points) + " points")
+		
+		# Assign units to this resource
+		for i in range(units_to_assign):
+			var unit_index = assigned_units + i
+			var unit = gatherer_units[unit_index]
+			var gatherer = unit.find_child("ResourceGatherer", true)
+			
+			# Try to reserve a gathering point and start gathering
+			if gatherer.start_gathering(resource):
+				print("[Player_Interface] Unit " + unit.name + " successfully started gathering from " + resource.name)
+			else:
+				print("[Player_Interface] Unit " + unit.name + " failed to start gathering, moving to resource instead")
+				unit.move_to(resource.global_transform.origin)
+		
+		# Update assigned units count
+		assigned_units += units_to_assign
+		
+		# Update available points for this resource
+		res_data.available_points -= units_to_assign
+	
+	# Second pass: move any remaining units to the nearest resource
+	if assigned_units < gatherer_units.size():
+		print("[Player_Interface] Moving " + str(gatherer_units.size() - assigned_units) + " units to resources (no gathering points available)")
+		
+		for i in range(assigned_units, gatherer_units.size()):
+			var unit = gatherer_units[i]
+			
+			# Find the nearest resource with the fewest units already assigned
+			var best_resource = null
+			var best_score = INF
+			
+			for res_data in available_resources:
+				var resource = res_data.node
+				var distance = unit.global_transform.origin.distance_to(resource.global_transform.origin)
+				
+				# Calculate a score (lower is better) based on distance and how many units are already going there
+				var score = distance * (1.0 + float(gatherer_units.size() - res_data.available_points) / float(gatherer_units.size()))
+				
+				if score < best_score:
+					best_score = score
+					best_resource = resource
+			
+			if best_resource:
+				print("[Player_Interface] Moving unit " + unit.name + " to resource " + best_resource.name)
+				unit.move_to(best_resource.global_transform.origin)
+			else:
+				# Fallback to primary resource if something went wrong
+				print("[Player_Interface] Fallback: Moving unit to primary resource")
+				unit.move_to(resource_node.global_transform.origin)
+	
+	# Non-gatherer units just move to the primary resource
+	for unit in non_gatherer_units:
+		print("[Player_Interface] Unit " + unit.name + " can't gather, moving to resource")
+		unit.move_to(resource_node.global_transform.origin)
